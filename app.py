@@ -5,7 +5,13 @@ import sqlite3
 st.set_page_config(page_title="Pokemon practice!", page_icon=":monkey:", layout="wide")
 
 
-
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
