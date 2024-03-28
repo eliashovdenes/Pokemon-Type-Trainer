@@ -1,16 +1,40 @@
 import streamlit as st
+import random as randInt
+import sqlite3
 
 st.set_page_config(page_title="Pokemon practice!", page_icon=":monkey:", layout="wide")
 
 
-pokemon_name = "Snorlax"
 
-all_correct = False
 
+def fetch_pokemon(pokemon_id):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM pokemon WHERE id = ?', (pokemon_id,))
+    pokemon = c.fetchone()
+    conn.close()
+    return pokemon
+
+# Function to initialize or reset the Pokémon shown
+def new_pokemon():
+    # random number from 1 to 10 (assuming you have at least 10 Pokémon in your database)
+    random_number = randInt.randint(1, 1025)
+    st.session_state['current_pokemon_id'] = random_number
+
+
+if 'current_pokemon_id' not in st.session_state:
+    new_pokemon()
+
+pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
+
+
+pokemon_name, generation, primary_type, secondary_type, image_url = pokemon[1:6]
+
+# Prepare the correct answers for checking
 correct_answers = {
-    'generation': 'Gen 1/Kanto',  
-    'typing': "Normal",   
-    'secondary_typing':"No secondary type"        
+    'generation': generation,
+    'typing': primary_type,
+    'secondary_typing': secondary_type
 }
 
 with st.container():
@@ -28,7 +52,7 @@ with st.container():
         with one:
             st.subheader("Current Pokemon:", anchor=False)
             #picture
-            url = "snorlax.png"
+            url = pokemon[5]
             st.image(url, width=300, caption=pokemon_name )
 
             hide_img_fs = '''
@@ -43,7 +67,7 @@ with st.container():
 
         with two:
             # Generation Dropdown
-            generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar']
+            generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar', 'Gen 9/Paldea']
             generation_disabled = st.session_state.get('generation_correct', False)
             selected_generation = st.selectbox(
                 "Select the generation:",
@@ -115,16 +139,17 @@ with st.container():
             
             
 
-           
-
-        
-
-
 with st.container():
      if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
         st.write("You got all the answers correct!")
 
-        st.button("Next Pokemon")
+        if st.button("Next Pokemon"):
+            new_pokemon()
+            # Clear previous answers correctness
+            st.session_state['generation_correct'] = False
+            st.session_state['typing_correct'] = False
+            st.rerun()  # This reruns the script to reflect the new state
+
 
 
 
