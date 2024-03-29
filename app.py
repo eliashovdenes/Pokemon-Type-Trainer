@@ -2,16 +2,10 @@ import streamlit as st
 import random as randInt
 import sqlite3
 
-st.set_page_config(page_title="Pokemon practice!", page_icon=":monkey:", layout="wide")
+st.set_page_config(page_title="Pokemon type trainer!", page_icon=":monkey:", layout="wide")
 
 
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
@@ -42,21 +36,26 @@ correct_answers = {
     'typing': primary_type,
     'secondary_typing': secondary_type
 }
-
 with st.container():
-    left, center, right = st.columns(3)
-    with center:
-            st.title("Pokemon Practice", anchor=False)
-            st.write("Guess the pokemons typing and generation!")
+        st.title("Pokemon Type Trainer", anchor=False)
+        st.write("Guess the pokemons generation and typing!", divider=True)
+        st.subheader("", divider=True)
+        
+#add a line
+# st.markdown("""---""")
 
-            #name of the weapon
-            # nameOfWeapon = "Weapon Name: " + pokemon_name
-            # st.subheader(nameOfWeapon, anchor=False)
+
+
+
+
 
 with st.container():
         one, two, three = st.columns(3)
         with one:
-            st.subheader("Current Pokemon:", anchor=False)
+            
+    
+            
+            st.subheader("""     Current Pokemon:""")
             #picture
             url = pokemon[5]
             st.image(url, width=300, caption=pokemon_name )
@@ -155,6 +154,16 @@ with st.container():
             st.session_state['generation_correct'] = False
             st.session_state['typing_correct'] = False
             st.rerun()  # This reruns the script to reflect the new state
+
+
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 
 
