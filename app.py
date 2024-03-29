@@ -24,6 +24,7 @@ hide_streamlit_style = """
             header {visibility: hidden;}
             [data-testid="stActionButtonLabel"] {visibility: hidden;}
             [data-testid="manage-app-button"] {visibility: hidden;}
+            .styles_terminalButton__JBj5T {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
