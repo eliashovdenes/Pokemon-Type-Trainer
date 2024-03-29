@@ -26,6 +26,7 @@ hide_streamlit_style = """
             [data-testid="manage-app-button"] {visibility: hidden;}
             .styles_terminalButton__JBj5T {visibility: hidden;}
             .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
+            .viewerBadge_link__qRIco {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
