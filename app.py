@@ -14,13 +14,20 @@ hide_github_icon = """
 st.markdown(hide_github_icon, unsafe_allow_html=True)
 
 
+
+
+
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
+            header {visibility: hidden;}
+            [data-testid="stActionButtonLabel"] {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
 
 
 
@@ -38,7 +45,7 @@ def fetch_pokemon(pokemon_id):
 
 # Function to initialize or reset the Pokémon shown
 def new_pokemon():
-    # random number from 1 to 10 (assuming you have at least 10 Pokémon in your database)
+    # random number from 1 to 1025 
     random_number = randInt.randint(1, 1025)
     st.session_state['current_pokemon_id'] = random_number
 
