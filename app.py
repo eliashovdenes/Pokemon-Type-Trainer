@@ -2,7 +2,28 @@ import streamlit as st
 import random as randInt
 import sqlite3
 
+
 st.set_page_config(page_title="Pokemon type trainer!", page_icon=":monkey:", layout="wide")
+
+
+hide_github_icon = """
+    <style>
+    #GithubIcon {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_github_icon, unsafe_allow_html=True)
+
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
+
 
 
 
@@ -157,13 +178,9 @@ with st.container():
 
 
 
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
+
 
 
 
