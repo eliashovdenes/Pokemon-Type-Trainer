@@ -1,4 +1,4 @@
-Checkout the site: https://pokemonprep.onrender.com
+Check out the site: https://pokemonprep.onrender.com
 
 Preview:
 ![image](preview.png)
