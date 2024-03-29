@@ -38,7 +38,7 @@ correct_answers = {
 }
 with st.container():
         st.title("Pokemon Type Trainer", anchor=False)
-        st.write("Guess the pokemons generation and typing!", divider=True)
+        st.write("Guess the pokemons generation and typing!")
         st.subheader("", divider=True)
         
 #add a line
