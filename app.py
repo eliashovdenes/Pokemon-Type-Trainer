@@ -23,6 +23,7 @@ hide_streamlit_style = """
             footer {visibility: hidden;}
             header {visibility: hidden;}
             [data-testid="stActionButtonLabel"] {visibility: hidden;}
+            [data-testid="manage-app-button"] {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
