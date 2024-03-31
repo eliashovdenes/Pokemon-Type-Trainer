@@ -1,7 +1,7 @@
 import streamlit as st
 import random as randInt
 import sqlite3
-
+import streamlit_shadcn_ui as ui
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
@@ -58,6 +58,7 @@ if 'current_pokemon_id' not in st.session_state:
 
 # Fetch the current Pokémon
 pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
+
 
 # Unpack the Pokémon data
 pokemon_name, generation, primary_type, secondary_type, image_url = pokemon[1:6]
@@ -159,6 +160,8 @@ with st.container():
                     key='typing_selection2'
                 )
 
+                
+
 
             # Button to check the typing, only visible if the correct answer hasn't been given yet
             if not typing_disabled:
@@ -174,6 +177,8 @@ with st.container():
                 st.success("Correct!")
 
             
+
+            
             
 # function to reset the values in the dropdowns 
 def reset():
@@ -182,17 +187,57 @@ def reset():
     st.session_state.typing_selection2 = 'No secondary type'
 
 
+def answer():
+    st.session_state.generation_selection = generation
+    st.session_state.typing_selection = primary_type
+    st.session_state.typing_selection2 = secondary_type
+
+
+
+
+
 # Display the success message and button to get a new Pokémon
 with st.container():
-    if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-        st.write("You got all the answers correct!")
 
-        if st.button("Next Pokemon", on_click=reset):
-            new_pokemon()
-            # Clear previous answers correctness
-            st.session_state['generation_correct'] = False
-            st.session_state['typing_correct'] = False
-            st.rerun()  # This reruns the script to reflect the new state
+        if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+            st.write("You got all the answers correct!")
+
+            if st.button("Next Pokemon", on_click=reset):
+                new_pokemon()
+                # Clear previous answers correctness
+                st.session_state['generation_correct'] = False
+                st.session_state['typing_correct'] = False
+                st.session_state["answer_button"] = True
+                st.rerun()  # This reruns the script to reflect the new state
+
+
+
+with st.container():
+    if st.session_state.get("answer_button", True):
+        if st.button("Show me the answers", on_click=answer):
+                        typing_disabled = True
+                        st.session_state['typing_correct'] = True
+                        typing_disabled2 = True
+                        st.session_state['generation_correct'] = True
+
+                        st.session_state["answer_button"] = False
+                        st.rerun()
+
+
+
+
+
+
+
+
+        
+    
+    
+    
+    
+
+
+
 
 
 
