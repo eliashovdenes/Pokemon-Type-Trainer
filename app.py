@@ -3,7 +3,7 @@ import random as randInt
 import sqlite3
 
 
-st.set_page_config(page_title="Pokemon type trainer!", page_icon=":monkey:", layout="wide")
+st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
 
 hide_github_icon = """
@@ -110,7 +110,9 @@ with st.container():
                 "Select the generation:",
                 generation_options,
                 index=0,
-                disabled=generation_disabled
+                disabled=generation_disabled,
+                key='generation_selection'
+                
             )
 
             # Button to check the generation, only enabled if the correct answer hasn't been given yet
@@ -142,7 +144,8 @@ with st.container():
                     "Select the typing:",
                     typing_options,
                     index=0,
-                    disabled=typing_disabled
+                    disabled=typing_disabled,
+                    key='typing_selection'
                 )
 
             with right:
@@ -155,7 +158,8 @@ with st.container():
                     "Select the secondary typing:",
                     typing_options2,
                     index=0,
-                    disabled=typing_disabled2
+                    disabled=typing_disabled2,
+                    key='typing_selection2'
                 )
 
 
@@ -175,12 +179,16 @@ with st.container():
             
             
             
+def reset():
+    st.session_state.generation_selection = 'Choose One:'
+    st.session_state.typing_selection = 'Choose One:'
+    st.session_state.typing_selection2 = 'No secondary type'
 
 with st.container():
-     if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+    if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
         st.write("You got all the answers correct!")
 
-        if st.button("Next Pokemon"):
+        if st.button("Next Pokemon", on_click=reset):
             new_pokemon()
             # Clear previous answers correctness
             st.session_state['generation_correct'] = False
