@@ -1,7 +1,7 @@
 import streamlit as st
 import random as randInt
 import sqlite3
-import streamlit_shadcn_ui as ui
+
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
@@ -222,6 +222,19 @@ with st.container():
 
                         st.session_state["answer_button"] = False
                         st.rerun()
+
+
+
+with st.container():
+    st.toggle("Gen 1", True, key="gen1")
+
+    if st.session_state.get("gen1"):
+        st.write("Gen 1")
+        # st.image("gen1.png", width=300)
+
+    
+    
+
 
 
 
