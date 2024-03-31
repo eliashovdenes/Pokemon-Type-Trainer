@@ -87,7 +87,7 @@ with st.container():
             
     
             
-            st.subheader("""     Current Pokemon:""")
+            st.subheader("""     Current Pokemon:""", anchor=False)
             #picture
             url = pokemon[5]
             st.image(url, width=300, caption=pokemon_name )
