@@ -164,25 +164,30 @@ with st.container():
         
         with two:
 
-            listOfActiveGens = []
+            listOfActiveGensNum = []
 
             for gen in range(1, 10):
                 if st.session_state[f'gen{gen}']:
                     if gen in gen_id_ranges:
-                        listOfActiveGens.append(gen_id_ranges[gen])
+                        listOfActiveGensNum.append(gen)
                     else:
                         print(f"Generation {gen} not found in gen_id_ranges. Please add it to the dictionary.")
 
-            print(listOfActiveGens)  # Debug print
+            print(listOfActiveGensNum)  # Debug print
 
 
             # if len of active generations is 1, set the correct generation to the only generation selected and if the user has clicked the next pokemon button
             
-            if len(listOfActiveGens) == 1:
-                print("Only one generation selected")
-                # set the correct generation to the only generation selected
-                st.session_state['generation_correct'] = True
-                answer()
+            if len(listOfActiveGensNum) == 1:
+                #extract number from generation string
+                checkGen = f'Gen {listOfActiveGensNum[0]}'
+                
+                
+                if checkGen in generation:
+                    print("Only one generation selected")
+                    # set the correct generation to the only generation selected
+                    st.session_state['generation_correct'] = True
+                    answer()
                 
 
             # Generation Dropdown
