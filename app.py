@@ -296,11 +296,12 @@ with st.container():
             # st.write("You got all the answers correct!")
 
             if st.button("Next Pokemon", on_click=reset):
+                st.session_state["answer_button"] = True
                 new_pokemon()
                 # Clear previous answers correctness
                 st.session_state['generation_correct'] = False
                 st.session_state['typing_correct'] = False
-                st.session_state["answer_button"] = True
+                
                 st.rerun()  # This reruns the script to reflect the new state
 
 
@@ -308,12 +309,11 @@ with st.container():
 with st.container():
     if st.session_state.get("answer_button", True):
         if st.button("Show me the answers", on_click=answer):
+                        st.session_state["answer_button"] = False
                         typing_disabled = True
                         st.session_state['typing_correct'] = True
                         typing_disabled2 = True
                         st.session_state['generation_correct'] = True
-
-                        st.session_state["answer_button"] = False
                         st.rerun()
 
 
