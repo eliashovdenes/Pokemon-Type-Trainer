@@ -11,8 +11,11 @@ def display_streak():
     """Displays the current streak in the sidebar."""
     st.sidebar.write("## Current Streak")
     st.sidebar.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
+    st.sidebar.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
 
     
+if 'highest_streak' not in st.session_state:
+    st.session_state['highest_streak'] = 0
 
 
 def answer():
@@ -66,8 +69,6 @@ gen_id_ranges = {
     8: (810, 905),
     9: (906, 1025),  
 }
-
-#test
 
 
 if 'prev_streak' not in st.session_state:
@@ -245,10 +246,31 @@ with st.container():
                     # set the correct generation to the only generation selected
                     st.session_state['generation_correct'] = True
                     answerGen()
-                
+
+            #All options
+            generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar', 'Gen 9/Paldea']
+
+            #Only keep the active gens
+            if len(listOfActiveGensNum) != 9:
+                newGeneration_options = [generation_options[0]]
+                for elem in listOfActiveGensNum:
+                    newGeneration_options.append(generation_options[elem])
+
+                generation_options = newGeneration_options
+
+            
+            
+            print(generation_options)
+
+            if 'generation_selection' not in st.session_state:
+                st.session_state.generation_selection = 'Choose One:'
+
+
+            if generation not in generation_options:
+                generation_options.append(generation)
 
             # Generation Dropdown
-            generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar', 'Gen 9/Paldea']
+            # generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar', 'Gen 9/Paldea']
             generation_disabled = st.session_state.get('generation_correct', False)
             selected_generation = st.selectbox(
                 "Select the generation:",
