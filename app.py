@@ -10,6 +10,11 @@ def answer():
     st.session_state.generation_selection = generation
     st.session_state.typing_selection = primary_type
     st.session_state.typing_selection2 = secondary_type
+
+def answerGen():
+    st.session_state.generation_selection = generation
+    
+
 # Hide various Streamlit stuff
 hide_github_icon = """
     <style>
@@ -187,7 +192,7 @@ with st.container():
                     print("Only one generation selected")
                     # set the correct generation to the only generation selected
                     st.session_state['generation_correct'] = True
-                    answer()
+                    answerGen()
                 
 
             # Generation Dropdown
