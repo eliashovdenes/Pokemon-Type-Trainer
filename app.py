@@ -1,5 +1,5 @@
 import streamlit as st
-import random as randInt
+import random 
 import sqlite3
 
 
@@ -32,7 +32,23 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 
+# Initialize state for each generation toggle if not already done
+for gen in range(1, 10):  # Generations 1 to 9
+    if f'gen{gen}' not in st.session_state:
+        st.session_state[f'gen{gen}'] = True  # Default all to False
 
+# Generation ID ranges in your database (Example ranges, adjust according to your dataset)
+gen_id_ranges = {
+    1: (1, 151),
+    2: (152, 251),
+    3: (252, 386),
+    4: (387, 493),
+    5: (494, 649),
+    6: (650, 721),
+    7: (722, 809),
+    8: (810, 905),
+    9: (906, 1025),  
+}
 
 
 
@@ -46,18 +62,37 @@ def fetch_pokemon(pokemon_id):
     conn.close()
     return pokemon
 
-# Function to pick a random Pokémon
 def new_pokemon():
-    # random number from 1 to 1025 
-    random_number = randInt.randint(1, 1025)
-    st.session_state['current_pokemon_id'] = random_number
+    # Filter for active generations based on checkboxes and ensure the key exists in gen_id_ranges
+    listOfActiveGens = []
 
+    for gen in range(1, 10):
+        if st.session_state[f'gen{gen}']:
+            if gen in gen_id_ranges:
+                listOfActiveGens.append(gen_id_ranges[gen])
+            else:
+                print(f"Generation {gen} not found in gen_id_ranges. Please add it to the dictionary.")
 
-if 'current_pokemon_id' not in st.session_state:
+    print(listOfActiveGens)  # Debug print
+    # if not listOfActiveGens:
+    #     st.warning("Please select at least one generation.")
+    #     return
+
+    if not listOfActiveGens:
+        listOfActiveGens = [(1, 1025)]
+    
+    randGen = random.choice(listOfActiveGens)
+    random_id = random.randint(randGen[0], randGen[1])
+    st.session_state['current_pokemon_id'] = random_id
+    print(random_id)  # Debug print
+
+#Choose a random pokemon if not chosen
+if 'current_pokemon_id' not in st.session_state or not st.session_state.get('current_pokemon_id'):
     new_pokemon()
 
 # Fetch the current Pokémon
-pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
+if 'current_pokemon_id' in st.session_state and st.session_state['current_pokemon_id']:
+    pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
 
 
 # Unpack the Pokémon data
@@ -69,6 +104,31 @@ correct_answers = {
     'typing': primary_type,
     'secondary_typing': secondary_type
 }
+
+with st.sidebar:
+    st.title("Generation Selection")
+    st.checkbox("Gen 1/Kanto", key='gen1')
+    st.checkbox("Gen 2/Johto", key='gen2')
+    st.checkbox("Gen 3/Hoenn", key='gen3')
+    st.checkbox("Gen 4/Sinnoh", key='gen4')
+    st.checkbox("Gen 5/Unova", key='gen5')
+    st.checkbox("Gen 6/Kalos", key='gen6')
+    st.checkbox("Gen 7/Alola", key='gen7')
+    st.checkbox("Gen 8/Galar", key='gen8')
+    st.checkbox("Gen 9/Paldea", key='gen9')
+
+    with st.expander("About"):
+            
+    
+        st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
+    
+
+
+    
+
+# Fetch and display the current Pokémon
+if 'current_pokemon_id' in st.session_state:
+    pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
 
 # Title information
 with st.container():
@@ -200,7 +260,7 @@ def answer():
 with st.container():
 
         if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-            st.write("You got all the answers correct!")
+            # st.write("You got all the answers correct!")
 
             if st.button("Next Pokemon", on_click=reset):
                 new_pokemon()
@@ -224,13 +284,6 @@ with st.container():
                         st.rerun()
 
 
-
-with st.container():
-    st.toggle("Gen 1", True, key="gen1")
-
-    if st.session_state.get("gen1"):
-        st.write("Gen 1")
-        # st.image("gen1.png", width=300)
 
     
     
