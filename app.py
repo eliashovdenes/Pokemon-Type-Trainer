@@ -6,6 +6,7 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
+
 def answer():
     st.session_state.generation_selection = generation
     st.session_state.typing_selection = primary_type
@@ -59,7 +60,14 @@ gen_id_ranges = {
 }
 
 
+if 'correct_guess_made' not in st.session_state:
+    st.session_state['correct_guess_made'] = True
 
+if 'current_streak' not in st.session_state:
+    st.session_state['current_streak'] = 0  # Tracks the number of correct guesses in a row
+
+if 'show_answer_pressed' not in st.session_state:
+    st.session_state['show_answer_pressed'] = False 
 
 # Function to fetch a Pokémon from the database
 def fetch_pokemon(pokemon_id):
@@ -71,6 +79,8 @@ def fetch_pokemon(pokemon_id):
     return pokemon
 
 def new_pokemon():
+    st.session_state['show_answer_pressed'] = False
+    
     # Filter for active generations based on checkboxes and ensure the key exists in gen_id_ranges
     listOfActiveGens = []
 
@@ -114,6 +124,12 @@ correct_answers = {
 }
 
 with st.sidebar:
+    
+    st.write("## Current Streak")
+    st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
+
+    
+
     st.title("Generation Selection")
     st.checkbox("Gen 1/Kanto", key='gen1')
     st.checkbox("Gen 2/Johto", key='gen2')
@@ -125,10 +141,17 @@ with st.sidebar:
     st.checkbox("Gen 8/Galar", key='gen8')
     st.checkbox("Gen 9/Paldea", key='gen9')
 
-    with st.expander("Instructions"):
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    
+
+    with st.expander("About"):
             
     
-        st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
+        st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong or click the 'Show me the answers' button. \n \n The correct answers will be shown after clicking the 'Show Answers' button. \n \n Good luck!")
     with st.expander("Credits"):
         st.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
 
@@ -239,6 +262,12 @@ with st.container():
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
+                        if st.session_state['current_streak'] > 0:
+                            st.caption("Streak lost!")
+                        st.session_state["current_streak"] = 0
+                        st.session_state['correct_guess_made'] = False
+                        st.rerun()
+                        
 
             else:
                 st.success("Correct!")
@@ -291,6 +320,11 @@ with st.container():
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
+                        if st.session_state['current_streak'] > 0:
+                            st.caption("Streak lost!")
+                        st.session_state["current_streak"] = 0
+                        st.session_state['correct_guess_made'] = False
+                        st.rerun()
 
             else:
                 st.success("Correct!")
@@ -314,18 +348,28 @@ def reset():
 
 # Display the success message and button to get a new Pokémon
 with st.container():
-    
-   
         if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+            if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
+                # st.write("You got all the answers correct!")
+                st.session_state['current_streak'] += 1
+                # st.write(f"Current streak: {st.session_state['current_streak']}")
+
+            print(st.session_state['current_streak'])
             st.session_state["answer_button"] = False
             # st.write("You got all the answers correct!")
 
+            
             if st.button("Next Pokemon", on_click=reset):
                 st.session_state["answer_button"] = True
+                st.session_state['current_streak'] -= 1
+                if st.session_state['current_streak'] < 0:
+                    st.session_state['current_streak'] = 0
+                
                 new_pokemon()
                 # Clear previous answers correctness
                 st.session_state['generation_correct'] = False
                 st.session_state['typing_correct'] = False
+                st.session_state['correct_guess_made'] = True
                 
                 st.rerun()  # This reruns the script to reflect the new state
 
@@ -339,11 +383,18 @@ with st.container():
                         st.session_state['typing_correct'] = True
                         typing_disabled2 = True
                         st.session_state['generation_correct'] = True
+
+                        # Set the state to show the answers
+                        st.session_state['show_answer_pressed'] = True
+                        # Reset the streak
+                        st.session_state['current_streak'] = 0
+
                         st.rerun()
 
 
 # st._bottom.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
 # st.link_button("GitHub","https://github.com/eliashovdenes/Pokemon-Type-Trainer", type="primary")
+
 
 
 
