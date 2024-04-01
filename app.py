@@ -6,6 +6,11 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
+def display_streak():
+    """Displays the current streak in the sidebar."""
+    st.sidebar.write("## Current Streak")
+    st.sidebar.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
+
 
 def answer():
     st.session_state.generation_selection = generation
@@ -125,8 +130,8 @@ correct_answers = {
 
 with st.sidebar:
     
-    st.write("## Current Streak")
-    st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
+    
+    display_streak()
 
     
 
@@ -352,8 +357,9 @@ with st.container():
             if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
                 # st.write("You got all the answers correct!")
                 st.session_state['current_streak'] += 1
-                # st.write(f"Current streak: {st.session_state['current_streak']}")
-
+                
+                
+            st.write("Streak:", st.session_state['current_streak'])
             print(st.session_state['current_streak'])
             st.session_state["answer_button"] = False
             # st.write("You got all the answers correct!")
@@ -372,6 +378,8 @@ with st.container():
                 st.session_state['correct_guess_made'] = True
                 
                 st.rerun()  # This reruns the script to reflect the new state
+
+    
 
 
 # Display the answers
