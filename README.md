@@ -1,7 +1,7 @@
 Check out the site: https://pokemonprep.onrender.com
 
 Preview:
-![image](preview.png)
+![image](preview2.png)
 
 I made this site as a fun side-project. The site tests you if you know the generation and type of a pokemon. This is made with python using the streamlit library. Website is hosted by render.
 
