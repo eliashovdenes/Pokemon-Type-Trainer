@@ -125,11 +125,12 @@ with st.sidebar:
     st.checkbox("Gen 8/Galar", key='gen8')
     st.checkbox("Gen 9/Paldea", key='gen9')
 
-    with st.expander("About"):
+    with st.expander("Instructions"):
             
     
         st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
-    
+    with st.expander("Credits"):
+        st.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
 
 
     
@@ -141,9 +142,31 @@ if 'current_pokemon_id' in st.session_state:
 # Title information
 with st.container():
         st.title("Pokemon Type Trainer", anchor=False)
-        st.write("Guess the pokemons generation and typing!")
+
+        left , right = st.columns([5, 5])
+        with left:
+            st.caption("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
+            
         st.subheader("", divider=True)
         
+
+# st.toast("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed.", icon="🔍")
+        
+# st.code("Pokemon Type Trainer", language="python")
+
+# st.download_button("Download the code", data="Pokemon Type Trainer", file_name="Pokemon_Type_Trainer.py", mime="text/python", key="download_button")
+
+
+
+# st.info("Select the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
+
+# st.help()s
+
+# with st.popover("Hello"):
+#     st.caption("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
+        
+
+ 
 
 
 with st.container():
@@ -178,7 +201,7 @@ with st.container():
                     else:
                         print(f"Generation {gen} not found in gen_id_ranges. Please add it to the dictionary.")
 
-            print(listOfActiveGensNum)  # Debug print
+            # print(listOfActiveGensNum)  # Debug print
 
 
             # if len of active generations is 1, set the correct generation to the only generation selected and if the user has clicked the next pokemon button
@@ -189,7 +212,7 @@ with st.container():
                 
                 
                 if checkGen in generation:
-                    print("Only one generation selected")
+                    # print("Only one generation selected")
                     # set the correct generation to the only generation selected
                     st.session_state['generation_correct'] = True
                     answerGen()
@@ -234,7 +257,7 @@ with st.container():
                 
                 typing_disabled = st.session_state.get('typing_correct', False)
                 selected_typing = st.selectbox(
-                    "Select the typing:",
+                    "Select the primary typing:",
                     typing_options,
                     index=0,
                     disabled=typing_disabled,
@@ -291,6 +314,8 @@ def reset():
 
 # Display the success message and button to get a new Pokémon
 with st.container():
+    
+   
         if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
             st.session_state["answer_button"] = False
             # st.write("You got all the answers correct!")
@@ -315,6 +340,10 @@ with st.container():
                         typing_disabled2 = True
                         st.session_state['generation_correct'] = True
                         st.rerun()
+
+
+# st._bottom.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
+# st.link_button("GitHub","https://github.com/eliashovdenes/Pokemon-Type-Trainer", type="primary")
 
 
 
