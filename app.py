@@ -146,7 +146,6 @@ with st.sidebar:
     st.checkbox("Gen 7/Alola", key='gen7')
     st.checkbox("Gen 8/Galar", key='gen8')
     st.checkbox("Gen 9/Paldea", key='gen9')
-    st.write("")
 
 # Fetch and display the current Pokémon if new pokemon is ran
 if 'current_pokemon_id' in st.session_state:
@@ -306,8 +305,6 @@ with st.container():
                 st.success("Correct!")
 
 
-st.write("")
-st.write("")
 
 
 
@@ -399,3 +396,7 @@ with st.sidebar:
         st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n The correct answers will be shown after clicking the 'Show Answers' button. \n \n Good luck!")
     with st.expander("Credits"):
         st.caption(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
+
+
+
+# #091747
