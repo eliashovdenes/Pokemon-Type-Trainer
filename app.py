@@ -7,6 +7,8 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
+
+
 def display_streak():
     """Displays the current streak in the sidebar."""
     st.sidebar.write("## Current Streak")
@@ -16,6 +18,11 @@ def display_streak():
     
 if 'highest_streak' not in st.session_state:
     st.session_state['highest_streak'] = 0
+
+
+if 'increased_high' not in st.session_state:
+    st.session_state["increased_high"] = False
+
 
 
 def answer():
@@ -380,10 +387,22 @@ with st.container():
             if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
                 # st.write("You got all the answers correct!")
                 st.session_state['current_streak'] += 1
+                if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                    st.session_state['highest_streak'] = st.session_state['current_streak']
+                    st.session_state['increased_high'] = True
+                
+                # st.session_state['highest_streak']
+
+                
+                
+                # if st.session_state['current_streak'] > st.session_state["highest_streak"]:
+                #     st.session_state["highest_streak"] = st.session_state['current_streak']
+
+                
 
             else:
                 if st.session_state['prev_streak'] > 0:
-                    st.toast("Streak lost! :fire: ")
+                    st.toast("Streak lost! :fire: ") 
                     print("Hello2")
 
                 elif st.session_state['current_streak'] > 0:
@@ -412,10 +431,23 @@ with st.container():
             if st.button("Next Pokemon", on_click=reset):
                 st.session_state["answer_button"] = True
                 st.session_state['current_streak'] -= 1
+                if st.session_state["increased_high"] == True:
+                    st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                    st.session_state["increased_high"] = False
+                
+                # st.session_state['highest_streak']-1
+
+
+                
 
 
                 if st.session_state['current_streak'] < 0:
                     st.session_state['current_streak'] = 0
+
+                # if st.session_state['highest_streak'] < 0:
+                #     st.session_state['highest_streak'] = 0
+
+                
 
                 
                 
@@ -474,12 +506,12 @@ with st.sidebar:
     st.write("")
    
 
-    with st.expander("About"):
+    with st.expander(" :grey_question:"):
             
     
         st.caption("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n The correct answers will be shown after clicking the 'Show Answers' button. \n \n Good luck!")
     with st.expander("Credits"):
-        st.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
+        st.caption(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes) :point_left:")
     
 
 
