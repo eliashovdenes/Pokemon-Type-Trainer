@@ -6,7 +6,10 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
-
+def answer():
+    st.session_state.generation_selection = generation
+    st.session_state.typing_selection = primary_type
+    st.session_state.typing_selection2 = secondary_type
 # Hide various Streamlit stuff
 hide_github_icon = """
     <style>
@@ -73,7 +76,7 @@ def new_pokemon():
             else:
                 print(f"Generation {gen} not found in gen_id_ranges. Please add it to the dictionary.")
 
-    print(listOfActiveGens)  # Debug print
+    # print(listOfActiveGens)  # Deb
     # if not listOfActiveGens:
     #     st.warning("Please select at least one generation.")
     #     return
@@ -84,7 +87,7 @@ def new_pokemon():
     randGen = random.choice(listOfActiveGens)
     random_id = random.randint(randGen[0], randGen[1])
     st.session_state['current_pokemon_id'] = random_id
-    print(random_id)  # Debug print
+    # print(random_id)  # Debug print
 
 #Choose a random pokemon if not chosen
 if 'current_pokemon_id' not in st.session_state or not st.session_state.get('current_pokemon_id'):
@@ -158,7 +161,30 @@ with st.container():
 
 
         # Display the generation guessing
+        
         with two:
+
+            listOfActiveGens = []
+
+            for gen in range(1, 10):
+                if st.session_state[f'gen{gen}']:
+                    if gen in gen_id_ranges:
+                        listOfActiveGens.append(gen_id_ranges[gen])
+                    else:
+                        print(f"Generation {gen} not found in gen_id_ranges. Please add it to the dictionary.")
+
+            print(listOfActiveGens)  # Debug print
+
+
+            # if len of active generations is 1, set the correct generation to the only generation selected and if the user has clicked the next pokemon button
+            
+            if len(listOfActiveGens) == 1:
+                print("Only one generation selected")
+                # set the correct generation to the only generation selected
+                st.session_state['generation_correct'] = True
+                answer()
+                
+
             # Generation Dropdown
             generation_options = ['Choose One:', 'Gen 1/Kanto', 'Gen 2/Johto', 'Gen 3/Hoenn', 'Gen 4/Sinnoh', 'Gen 5/Unova', 'Gen 6/Kalos', 'Gen 7/Alola', 'Gen 8/Galar', 'Gen 9/Paldea']
             generation_disabled = st.session_state.get('generation_correct', False)
@@ -247,10 +273,7 @@ def reset():
     st.session_state.typing_selection2 = 'No secondary type'
 
 
-def answer():
-    st.session_state.generation_selection = generation
-    st.session_state.typing_selection = primary_type
-    st.session_state.typing_selection2 = secondary_type
+
 
 
 
@@ -258,8 +281,8 @@ def answer():
 
 # Display the success message and button to get a new Pokémon
 with st.container():
-
         if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+            st.session_state["answer_button"] = False
             # st.write("You got all the answers correct!")
 
             if st.button("Next Pokemon", on_click=reset):
@@ -271,7 +294,7 @@ with st.container():
                 st.rerun()  # This reruns the script to reflect the new state
 
 
-
+# Display the answers
 with st.container():
     if st.session_state.get("answer_button", True):
         if st.button("Show me the answers", on_click=answer):
