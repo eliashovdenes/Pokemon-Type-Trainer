@@ -151,16 +151,16 @@ with st.sidebar:
 if 'current_pokemon_id' in st.session_state:
     pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
 
-# Title information
-with st.container():
-        st.title("Pokemon Type Trainer", anchor=False)
-        left , right = st.columns([7, 3])
-        with left:
-            st.markdown("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")   
-        # st.subheader("", divider=True)
+# # Title information
+# with st.container():
+#         st.title("Pokemon Type Trainer", anchor=False)
+#         left , right = st.columns([7, 3])
+#         with left:
+#             st.markdown("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")   
+#         # st.subheader("", divider=True)
 
 
-        st.markdown("""---""")
+#         st.markdown("""---""")
         
 
 # Maybe UI for later:
@@ -393,10 +393,9 @@ with st.sidebar:
         st.markdown(" Enable all generations to gain streak :exclamation:")
     st.write("")
     with st.expander(" :question:"):
-        st.markdown("The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n The correct answers will be shown after clicking the 'Show Answers' button. \n \n Good luck!")
+        st.markdown("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon. \n \n The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n Good luck!")
     with st.expander("Credits"):
         st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
 
 
 
-# #091747
