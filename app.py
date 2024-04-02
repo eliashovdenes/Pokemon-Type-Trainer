@@ -5,6 +5,9 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
+
+
+
 # Function to display the current streak in the sidebar
 def display_streak():
     """Displays the current streak in the sidebar."""
@@ -17,6 +20,12 @@ def answer():
     st.session_state.generation_selection = generation
     st.session_state.typing_selection = primary_type
     st.session_state.typing_selection2 = secondary_type
+    
+
+    if st.session_state['guess_name'] == True:
+        st.session_state.select_name = pokemon_name
+
+    
 
 # Function to set the generation answer to the correct answer
 def answerGen():
@@ -67,6 +76,18 @@ gen_id_ranges = {
     9: (906, 1025),  
 }
 
+# Make a list of all of the names of a pokemon through the database
+conn = sqlite3.connect('pokemon.db')
+c = conn.cursor()
+c.execute('SELECT name FROM pokemon')
+listOfPokemonNames = [name[0] for name in c.fetchall()]
+listOfPokemonNames.insert(0, "Write here/Choose One:")
+conn.close()
+
+
+
+
+
 
 # Initialize various session state variables
 if 'highest_streak' not in st.session_state:
@@ -86,6 +107,17 @@ if 'current_streak' not in st.session_state:
 
 if 'show_answer_pressed' not in st.session_state:
     st.session_state['show_answer_pressed'] = False  # Tracks if the show answer button has been pressed
+
+if 'guess_name' not in st.session_state:
+    st.session_state['guess_name'] = False # Tracks if the user wants to guess the name of the pokemon
+
+
+if "name_guess_bool" not in st.session_state:
+    st.session_state['name_guess_bool'] = False # Tracks if the name guess is correct
+
+
+
+    
 
 # Function to fetch a Pokémon from the database
 def fetch_pokemon(pokemon_id):
@@ -136,7 +168,7 @@ correct_answers = {
 }
 
 with st.sidebar:
-    st.title("Generation Selection")
+    st.write("## Generation Selection")
     st.checkbox("Gen 1/Kanto", key='gen1')
     st.checkbox("Gen 2/Johto", key='gen2')
     st.checkbox("Gen 3/Hoenn", key='gen3')
@@ -147,20 +179,19 @@ with st.sidebar:
     st.checkbox("Gen 8/Galar", key='gen8')
     st.checkbox("Gen 9/Paldea", key='gen9')
 
+with st.sidebar:
+    st.sidebar.write("### Extra Options")
+    # Display a toggle for if the user wants to guess the name also
+    # Ensure the toggle respects the current session state value
+    guess_name_toggle = st.sidebar.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name")
+
 # Fetch and display the current Pokémon if new pokemon is ran
 if 'current_pokemon_id' in st.session_state:
     pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
 
-# # Title information
-# with st.container():
-#         st.title("Pokemon Type Trainer", anchor=False)
-#         left , right = st.columns([7, 3])
-#         with left:
-#             st.markdown("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")   
-#         # st.subheader("", divider=True)
 
 
-#         st.markdown("""---""")
+
         
 
 # Maybe UI for later:
@@ -179,9 +210,13 @@ with st.container():
         # Display the current Pokémon, generation guessing, and typing guessing
         one, two, three = st.columns([3, 2, 3])
         # Display the current Pokémon
+        pokename = pokemon_name
+        if st.session_state['guess_name'] == True:
+            pokename = ""
+
         with one:
             st.subheader("""Current Pokemon:""", anchor=False)
-            st.image(image_url, width=300, caption=pokemon_name)
+            st.image(image_url, width=300, caption=pokename)
             hide_img_fs = '''
             <style>
             button[title="View fullscreen"]{
@@ -256,6 +291,9 @@ with st.container():
                         st.session_state['correct_guess_made'] = False
             else:
                 st.success("Correct!")
+
+
+
     
             
         # Display the typing guessing
@@ -274,6 +312,8 @@ with st.container():
                     disabled=typing_disabled,
                     key='typing_selection'
                 )
+
+               
 
             # Display the typing guessing for the secondary typing
             with right:
@@ -304,6 +344,35 @@ with st.container():
             else:
                 st.success("Correct!")
 
+            # st.write(st.session_state['guess_name'])
+
+           
+            if st.session_state['guess_name'] == True:
+                            # Display the name guessing
+
+                            name_guess_disabled = st.session_state.get('name_guess_bool', False)
+                            name_guess = st.selectbox("Guess the name of the Pokémon:", listOfPokemonNames, index=0, key='select_name', disabled=name_guess_disabled)
+
+
+                            if not name_guess_disabled:
+                                if st.button('Check Name'):
+                                    if name_guess.lower().strip() == pokemon_name.lower().strip():
+                                        st.success("Correct!")
+                                        st.session_state['name_guess_bool'] = True
+                                        
+                                        name_guess_disabled = True
+                                        
+                                        st.rerun()
+                                    else:
+                                        st.error("Incorrect. Try again.")
+
+                            else:
+                                st.success("Correct!")
+                                      
+
+
+   
+
 
 
 
@@ -314,52 +383,107 @@ def reset():
     st.session_state.generation_selection = 'Choose One:'
     st.session_state.typing_selection = 'Choose One:'
     st.session_state.typing_selection2 = 'No secondary type'
+    st.session_state.select_name = 'Write here/Choose One:'
 
 
 # Display the success message and button to get a new Pokémon
 with st.container():
-        if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-            # If the user guessed correct on the first try, increase the streak
-            if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
-                st.session_state['current_streak'] += 1
-                # If the current streak is higher than the highest streak, update the highest streak
-                if st.session_state['current_streak'] > st.session_state['highest_streak']:
-                    st.session_state['highest_streak'] = st.session_state['current_streak']
-                    st.session_state['increased_high'] = True
-            else:
-                # If the user guessed wrong, reset the streak and say that streak is lost
-                if st.session_state['prev_streak'] > 0:
-                    st.toast("Streak lost! :fire: ")                   
+        
+        if st.session_state["guess_name"] == True:
 
-                elif st.session_state['current_streak'] > 0:
-                    st.toast("Streak lost! :fire:")
-                    st.toast("You have disabled a generation!")
-
-                st.session_state['current_streak'] = 0
-                st.session_state['prev_streak'] = 0            
-            
-            st.session_state["answer_button"] = False
-
-            # If the user clicks the button, get a new Pokémon and reset the dropdowns
-            if st.button("Next Pokemon", on_click=reset):
-                st.session_state["answer_button"] = True
-                st.session_state['current_streak'] -= 1
-
-                if st.session_state["increased_high"] == True:
-                    st.session_state['highest_streak'] = st.session_state['highest_streak']-1
-                    st.session_state["increased_high"] = False
+            if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
+                print("I am here in the name guess true")
+                # If the user guessed correct on the first try, increase the streak
                 
-                if st.session_state['current_streak'] < 0:
+                if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
+                    st.session_state['current_streak'] += 1
+                    # If the current streak is higher than the highest streak, update the highest streak
+                    if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                        st.session_state['highest_streak'] = st.session_state['current_streak']
+                        st.session_state['increased_high'] = True
+                else:
+                    # If the user guessed wrong, reset the streak and say that streak is lost
+                    if st.session_state['prev_streak'] > 0:
+                        st.toast("Streak lost! :fire: ")                   
+
+                    elif st.session_state['current_streak'] > 0:
+                        st.toast("Streak lost! :fire:")
+                        st.toast("You have disabled a generation!")
+
                     st.session_state['current_streak'] = 0
-
-                new_pokemon()
-                # Clear previous answers correctness
-                st.session_state['generation_correct'] = False
-                st.session_state['typing_correct'] = False
-                st.session_state['correct_guess_made'] = True
+                    st.session_state['prev_streak'] = 0            
                 
-                st.rerun()  # This reruns the script to reflect the new state
+                st.session_state["answer_button"] = False
 
+                # If the user clicks the button, get a new Pokémon and reset the dropdowns
+                if st.button("Next Pokemon", on_click=reset):
+                    st.session_state["answer_button"] = True
+                    st.session_state['current_streak'] -= 1
+
+                    if st.session_state["increased_high"] == True:
+                        st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                        st.session_state["increased_high"] = False
+                    
+                    if st.session_state['current_streak'] < 0:
+                        st.session_state['current_streak'] = 0
+
+                    new_pokemon()
+                    # Clear previous answers correctness
+                    st.session_state['generation_correct'] = False
+                    st.session_state['typing_correct'] = False
+                    st.session_state['correct_guess_made'] = True
+                    st.session_state['name_guess_bool'] = False
+                    
+                    st.rerun()  # This reruns the script to reflect the new state
+        else:
+            if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+
+                print("I am here in the name guess not active")
+                
+                # If the user guessed correct on the first try, increase the streak
+                # st.session_state['name_guess_bool'] = False
+                if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
+                    st.session_state['current_streak'] += 1
+                    # If the current streak is higher than the highest streak, update the highest streak
+                    if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                        st.session_state['highest_streak'] = st.session_state['current_streak']
+                        st.session_state['increased_high'] = True
+                else:
+                    # If the user guessed wrong, reset the streak and say that streak is lost
+                    if st.session_state['prev_streak'] > 0:
+                        st.toast("Streak lost! :fire: ")                   
+
+                    elif st.session_state['current_streak'] > 0:
+                        st.toast("Streak lost! :fire:")
+                        st.toast("You have disabled a generation!")
+
+                    st.session_state['current_streak'] = 0
+                    st.session_state['prev_streak'] = 0            
+                
+                st.session_state["answer_button"] = False
+
+                # If the user clicks the button, get a new Pokémon and reset the dropdowns
+                if st.button("Next Pokemon", on_click=reset):
+                    st.session_state["answer_button"] = True
+                    st.session_state['current_streak'] -= 1
+
+                    if st.session_state["increased_high"] == True:
+                        st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                        st.session_state["increased_high"] = False
+                    
+                    if st.session_state['current_streak'] < 0:
+                        st.session_state['current_streak'] = 0
+
+                    new_pokemon()
+                    # Clear previous answers correctness
+                    st.session_state['generation_correct'] = False
+                    st.session_state['typing_correct'] = False
+                    st.session_state['correct_guess_made'] = True
+                    st.session_state['name_guess_bool'] = False
+                    
+                    st.rerun()  # This reruns the script to reflect the new state
+            
+    
     
 
 # Display the answers
@@ -372,6 +496,10 @@ with st.container():
                         st.session_state['typing_correct'] = True
                         typing_disabled2 = True
                         st.session_state['generation_correct'] = True
+
+                        st.session_state['name_guess_bool'] = True
+                        name_guess_disabled = True
+                        
 
                         # Set the state to show the answers
                         st.session_state['show_answer_pressed'] = True
@@ -388,6 +516,9 @@ display_streak()
 
 # Display the credits and information
 with st.sidebar:
+    
+
+    
 
     if len(listOfActiveGensNum) != 9:
         st.markdown(" Enable all generations to gain streak :exclamation:")
