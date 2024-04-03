@@ -405,7 +405,7 @@ with st.container():
         if st.session_state["guess_name"] == True:
 
             if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
-                print("I am here in the name guess true")
+                # print("I am here in the name guess true")
                 # If the user guessed correct on the first try, increase the streak
                 
                 if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
@@ -452,7 +452,7 @@ with st.container():
         else:
             if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
 
-                print("I am here in the name guess not active")
+                # print("I am here in the name guess not active")
                 
                 # If the user guessed correct on the first try, increase the streak
                 # st.session_state['name_guess_bool'] = False
