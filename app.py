@@ -410,6 +410,7 @@ with st.container():
                 
                 if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
                     st.session_state['current_streak'] += 1
+                    st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
                     # If the current streak is higher than the highest streak, update the highest streak
                     if st.session_state['current_streak'] > st.session_state['highest_streak']:
                         st.session_state['highest_streak'] = st.session_state['current_streak']
@@ -457,6 +458,7 @@ with st.container():
                 # st.session_state['name_guess_bool'] = False
                 if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
                     st.session_state['current_streak'] += 1
+                    st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
                     # If the current streak is higher than the highest streak, update the highest streak
                     if st.session_state['current_streak'] > st.session_state['highest_streak']:
                         st.session_state['highest_streak'] = st.session_state['current_streak']
