@@ -5,8 +5,21 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="logo2.png", layout="wide")
 
+# Generator that produces the next char in the string
+# def next_char(s):
+#     for c in s:
+#         yield c
+#         time.sleep(0.05)
+
+# Display the welcome message
+# if st.session_state["welcome"] == True:
+#     st.write_stream(next_char("Welcom to Pokemon Type Trainer!"))
+#     time.sleep(1)
+#     st.session_state["welcome"] = False
+#     st.rerun()
 
 
+    
 
 # Function to display the current streak in the sidebar
 def display_streak():
@@ -530,3 +543,18 @@ with st.sidebar:
 
 
 
+
+
+
+
+
+
+
+# tab1, tab2 = st.tabs(["Pokemon Type Trainer", "Pokemon Type Trainer Info"])
+
+# with tab1:
+#     st.sidebar.write("Hello")
+
+
+# with tab2:
+#     st.write("Hello2")
