@@ -303,6 +303,9 @@ with st.container():
                                 st.toast("Streak lost! :fire:")
                             st.session_state["current_streak"] = 0
                             st.session_state['correct_guess_made'] = False
+
+                    else:
+                        st.error("Please select a generation.")
             else:
                 st.success("Correct!")
 
@@ -356,10 +359,12 @@ with st.container():
                                 st.toast("Streak lost! :fire: ")
                             st.session_state["current_streak"] = 0
                             st.session_state['correct_guess_made'] = False
+                    else:
+                        st.error("Please select atleast the primary typing.")
             else:
                 st.success("Correct!")
 
-            # st.write(st.session_state['guess_name'])
+            
 
            
             if st.session_state['guess_name'] == True:
