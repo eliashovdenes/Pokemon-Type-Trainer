@@ -292,16 +292,17 @@ with st.container():
             # Button to check the generation, only visible if the correct answer hasn't been given yet
             if not generation_disabled:
                 if st.button('Check Generation'):
-                    if selected_generation == correct_answers['generation']:
-                        st.session_state['generation_correct'] = True
-                        generation_disabled = True
-                        st.rerun()
-                    else:
-                        st.error("Incorrect. Try again.")
-                        if st.session_state['current_streak'] > 0:
-                            st.toast("Streak lost! :fire:")
-                        st.session_state["current_streak"] = 0
-                        st.session_state['correct_guess_made'] = False
+                    if selected_generation != 'Choose One:':
+                        if selected_generation == correct_answers['generation']:
+                            st.session_state['generation_correct'] = True
+                            generation_disabled = True
+                            st.rerun()
+                        else:
+                            st.error("Incorrect. Try again.")
+                            if st.session_state['current_streak'] > 0:
+                                st.toast("Streak lost! :fire:")
+                            st.session_state["current_streak"] = 0
+                            st.session_state['correct_guess_made'] = False
             else:
                 st.success("Correct!")
 
@@ -344,16 +345,17 @@ with st.container():
             # Button to check the typing, only visible if the correct answer hasn't been given yet
             if not typing_disabled:
                 if st.button('Check Typing'):
-                    if selected_typing == correct_answers['typing'] and selected_typing2 == correct_answers['secondary_typing'] or selected_typing == correct_answers['secondary_typing'] and selected_typing2 == correct_answers['typing']:
-                        st.session_state['typing_correct'] = True
-                        typing_disabled = True
-                        st.rerun()
-                    else:
-                        st.error("Incorrect. Try again.")
-                        if st.session_state['current_streak'] > 0:
-                            st.toast("Streak lost! :fire: ")
-                        st.session_state["current_streak"] = 0
-                        st.session_state['correct_guess_made'] = False
+                    if selected_typing != 'Choose One:':
+                        if selected_typing == correct_answers['typing'] and selected_typing2 == correct_answers['secondary_typing'] or selected_typing == correct_answers['secondary_typing'] and selected_typing2 == correct_answers['typing']:
+                            st.session_state['typing_correct'] = True
+                            typing_disabled = True
+                            st.rerun()
+                        else:
+                            st.error("Incorrect. Try again.")
+                            if st.session_state['current_streak'] > 0:
+                                st.toast("Streak lost! :fire: ")
+                            st.session_state["current_streak"] = 0
+                            st.session_state['correct_guess_made'] = False
             else:
                 st.success("Correct!")
 
