@@ -524,7 +524,7 @@ with st.sidebar:
         st.markdown(" Enable all generations to gain streak :exclamation:")
     st.write("")
     with st.expander(" :question:"):
-        st.markdown("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon. \n \n The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n Good luck!")
+        st.markdown("Welcome to the Pokemon Type Trainer! \n \n Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon. \n \n The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n You can also enable name guessing! Not guessing the name correctly does not affect the streak. \n \n Good luck!")
     with st.expander("Credits"):
         st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes)")
 
