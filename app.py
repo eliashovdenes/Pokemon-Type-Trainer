@@ -187,6 +187,8 @@ tab1, tab2, tab3, tab4= st.tabs(["Pokemon Type Trainer", "Streak","Options", "Ab
 
 
 with tab3:
+    left, right, third = st.columns([1, 1, 1])
+    with left:
         st.subheader("Generation Selection", anchor=False)
         st.checkbox("Gen 1/Kanto", key='gen1')
         st.checkbox("Gen 2/Johto", key='gen2')
@@ -198,7 +200,7 @@ with tab3:
         st.checkbox("Gen 8/Galar", key='gen8')
         st.checkbox("Gen 9/Paldea", key='gen9')
 
-
+    with right:
         st.subheader("Extra Options", anchor=False)
         # Display a toggle for if the user wants to guess the name also
         # Ensure the toggle respects the current session state value
@@ -225,6 +227,10 @@ if 'current_pokemon_id' in st.session_state:
 #     st.caption("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
 # st._bottom.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
 # st.link_button("GitHub","https://github.com/eliashovdenes/Pokemon-Type-Trainer", type="primary")        
+# st.popover
+# st.radio st.info
+
+
 
 # Display the Pokémon image and the guessing options
     
@@ -548,6 +554,8 @@ with tab1:
 # In the sidebar, display the current streak
 with tab2:
     display_streak()
+    if len(listOfActiveGensNum) != 9:
+        st.markdown(" Enable all generations to gain streak :exclamation:")
 
 # Display the credits and information
 with tab4:
@@ -555,9 +563,8 @@ with tab4:
 
     
 
-    if len(listOfActiveGensNum) != 9:
-        st.markdown(" Enable all generations to gain streak :exclamation:")
-    st.write("")
+    
+    
     with st.expander("What is this?"):
         st.markdown("Welcome to the Pokemon Type Trainer! \n \n Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon. \n \n The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n You can also enable name guessing! Not guessing the name correctly does not affect the streak. \n \n Good luck!")
     with st.expander("Inspiration"):
