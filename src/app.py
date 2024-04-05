@@ -5,8 +5,6 @@ import sqlite3
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
 
-# data\preview2.png
-
 # Generator that produces the next char in the string
 # def next_char(s):
 #     for c in s:
@@ -21,7 +19,6 @@ st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.
 #     st.rerun()
 
 
-    
 
 # Function to display the current streak in the sidebar
 def display_streak():
@@ -48,27 +45,6 @@ def answerGen():
     
 
 
-# Hide various Streamlit stuff
-hide_github_icon = """
-    <style>
-    #GithubIcon {visibility: hidden;}
-    </style>
-    """
-st.markdown(hide_github_icon, unsafe_allow_html=True)
-
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            [data-testid="stActionButtonLabel"] {visibility: hidden;}
-            [data-testid="manage-app-button"] {visibility: hidden;}
-            .styles_terminalButton__JBj5T {visibility: hidden;}
-            .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
-            .viewerBadge_link__qRIco {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 
 
@@ -577,11 +553,25 @@ with tab4:
             st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
 
 
-# tab1, tab2 = st.tabs(["Pokemon Type Trainer", "Pokemon Type Trainer Info"])
+# Hide various Streamlit stuff
+hide_github_icon = """
+    <style>
+    #GithubIcon {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_github_icon, unsafe_allow_html=True)
 
-# with tab1:
-#     st.sidebar.write("Hello")
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            [data-testid="stActionButtonLabel"] {visibility: hidden;}
+            [data-testid="manage-app-button"] {visibility: hidden;}
+            .styles_terminalButton__JBj5T {visibility: hidden;}
+            .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
+            .viewerBadge_link__qRIco {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
-
-# with tab2:
-#     st.write("Hello2")
