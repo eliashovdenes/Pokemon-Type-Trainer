@@ -166,7 +166,27 @@ tab1, tab2, tab3, tab4= st.tabs(["Pokemon Type Trainer", "Streak","Options", "Ab
 with tab3:
     left, right, third = st.columns([1, 1, 1])
     with left:
+
         st.subheader("Generation Selection", anchor=False)
+
+        
+        if "Enable all" not in st.session_state:
+            st.session_state["Enable all"] = True
+        
+        if st.button("Enable all/Disable all", key="enable_all"):
+            if st.session_state["Enable all"] == False:
+                for gen in range(1, 10):
+                    st.session_state[f'gen{gen}'] = True
+                    st.session_state["Enable all"] = True
+
+            else:
+                for gen in range(1, 10):
+                    st.session_state[f'gen{gen}'] = False
+                    st.session_state["Enable all"] = False
+
+        
+        
+        
         st.checkbox("Gen 1/Kanto", key='gen1')
         st.checkbox("Gen 2/Johto", key='gen2')
         st.checkbox("Gen 3/Hoenn", key='gen3')
@@ -176,6 +196,12 @@ with tab3:
         st.checkbox("Gen 7/Alola", key='gen7')
         st.checkbox("Gen 8/Galar", key='gen8')
         st.checkbox("Gen 9/Paldea", key='gen9')
+
+        
+        
+        
+
+        
 
     with right:
         st.subheader("Extra Options", anchor=False)
