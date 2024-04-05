@@ -19,7 +19,6 @@ st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.
 #     st.rerun()
 
 
-
 # Function to display the current streak in the sidebar
 def display_streak():
     """Displays the current streak in the sidebar."""
@@ -189,6 +188,29 @@ with tab3:
 # Fetch and display the current Pokémon if new pokemon is ran
 if 'current_pokemon_id' in st.session_state:
     pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
+
+
+# Hide various Streamlit stuff
+hide_github_icon = """
+    <style>
+    #GithubIcon {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_github_icon, unsafe_allow_html=True)
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            [data-testid="stActionButtonLabel"] {visibility: hidden;}
+            [data-testid="manage-app-button"] {visibility: hidden;}
+            .styles_terminalButton__JBj5T {visibility: hidden;}
+            .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
+            .viewerBadge_link__qRIco {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 
 
@@ -553,25 +575,5 @@ with tab4:
             st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
 
 
-# Hide various Streamlit stuff
-hide_github_icon = """
-    <style>
-    #GithubIcon {visibility: hidden;}
-    </style>
-    """
-st.markdown(hide_github_icon, unsafe_allow_html=True)
 
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            [data-testid="stActionButtonLabel"] {visibility: hidden;}
-            [data-testid="manage-app-button"] {visibility: hidden;}
-            .styles_terminalButton__JBj5T {visibility: hidden;}
-            .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
-            .viewerBadge_link__qRIco {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
