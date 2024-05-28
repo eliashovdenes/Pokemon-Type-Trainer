@@ -1,9 +1,17 @@
 import streamlit as st
 import random 
 import sqlite3
+import pandas as pd
+import hashlib
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
+
+
+# Function to reset state variables when toggling "Guess the name"
+def toggle_guess_name():
+    st.session_state['correct_guess_made'] = False
+    st.session_state['name_guess_bool'] = False
 
 # Generator that produces the next char in the string
 # def next_char(s):
@@ -18,6 +26,21 @@ st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.
 #     st.session_state["welcome"] = False
 #     st.rerun()
 
+#saving the highest streak to database
+def update_highest_streak(user_id, new_streak):
+    conn = sqlite3.connect('persons.db')
+    c = conn.cursor()
+    c.execute('SELECT highest_streak FROM user_scores WHERE user_id = ?', (user_id,))
+    result = c.fetchone()
+    if result:
+        highest_streak = result[0]
+        if new_streak > highest_streak:
+            c.execute('UPDATE user_scores SET highest_streak = ? WHERE user_id = ?', (new_streak, user_id))
+    else:
+        c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (?, ?)', (user_id, new_streak))
+    conn.commit()
+    conn.close()
+
 
 # Function to display the current streak in the sidebar
 def display_streak():
@@ -25,6 +48,15 @@ def display_streak():
     st.subheader("Current Streak", anchor=False)
     st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
     st.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
+
+    if  st.session_state['logged_in']:
+        current_user_id = st.session_state['user_id']
+        print("updating highest", st.session_state['highest_streak'])
+        print("current user:", current_user_id)
+        update_highest_streak(current_user_id, st.session_state['highest_streak'])
+
+
+
 
 # Funcion to set all the answers to the correct answers
 def answer():
@@ -158,10 +190,187 @@ correct_answers = {
 }
 
 #
-tab1, tab2, tab3, tab4= st.tabs(["Pokemon Type Trainer", "Streak","Options", "About"])
+tab1, tab2, leaderboard, tab3, tab4= st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Options", "About"])
 
 
 
+
+
+with leaderboard:
+
+    
+
+
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    if not st.session_state['logged_in']:
+        st.write("To see and use leaderboard you have to login")
+
+    def load_banned_words(file_path):
+        with open(file_path, 'r') as file:
+            banned_words = [line.strip().lower() for line in file.readlines()]
+        return banned_words
+
+    banned_words = load_banned_words('bannedwords.txt')
+
+    def contains_banned_word(username):
+        username_lower = username.lower()
+        return any(banned_word in username_lower for banned_word in banned_words)
+    
+
+    def hash_password(password):
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def create_user(username, password):
+        conn = sqlite3.connect('persons.db')
+        c = conn.cursor()
+
+        # Check if the username is already taken
+        c.execute('SELECT * FROM users WHERE username = ?', (username,))
+        user = c.fetchone()
+        if user:
+            conn.close()
+            return False
+    
+        password_hash = hash_password(password)
+        c.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, password_hash))
+        conn.commit()
+        conn.close()
+
+    def login_user(username, password):
+        conn = sqlite3.connect('persons.db')
+        c = conn.cursor()
+        password_hash = hash_password(password)
+        c.execute('SELECT * FROM users WHERE username = ? AND password_hash = ?', (username, password_hash))
+        user = c.fetchone()
+        conn.close()
+        return user
+    
+
+    
+    # Registration Form
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    left, right = st.columns(2)
+
+    with right:
+        if not st.session_state['logged_in']:
+            st.write("Not registered?")
+
+        with st.expander("Register now"):
+
+            if not st.session_state['logged_in']:
+                # st.write("Register")
+                username = st.text_input("Username", key='register_username')
+                password = st.text_input("Password", type="password", key='register_password')
+                if st.button("Register"):
+                    if not username.strip() or not password.strip():
+                        st.error("Username and password cannot be empty or just spaces.")
+
+                    elif contains_banned_word(username):
+                        st.error("Username already taken")
+                
+                    else:
+                        new_user = create_user(username, password)
+
+                        if new_user == False:
+                            st.error("Username already taken")
+                        else:
+                            st.success("Registered successfully")
+                        
+                    
+
+    with left:
+        # Login Form
+        if not st.session_state['logged_in']:
+            st.write("Login")
+            username = st.text_input("Username", key='login_username')
+            password = st.text_input("Password", type="password", key='login_password')
+            if st.button("Login"):
+                user = login_user(username, password)
+                if user:
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_id'] = user[0]
+                    st.success("Logged in successfully!")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+
+
+
+    
+
+    if  st.session_state['logged_in']:
+        # st.title("You are logged in!")
+
+        # Fetch leaderboard data
+        def fetch_leaderboard():
+            conn = sqlite3.connect('persons.db')
+            c = conn.cursor()
+            c.execute('''
+                SELECT u.username, s.highest_streak
+                FROM user_scores s
+                JOIN users u ON s.user_id = u.user_id
+                ORDER BY s.highest_streak DESC
+                LIMIT 10
+            ''')
+            leaderboard = c.fetchall()
+            conn.close()
+            leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Highest Streak"])
+            leaderboard_df["Rank"] = leaderboard_df.index + 1
+            leaderboard_df = leaderboard_df[["Rank", "Username", "Highest Streak"]]
+            return leaderboard_df
+
+        # Display the leaderboard
+        
+        st.title("Leaderboard", anchor=False)
+        leaderboard_df = fetch_leaderboard()
+
+        # Custom CSS to hide hover buttons
+        hide_dataframe_hover_buttons = """
+            <style>
+            /* Hide the toolbar buttons */
+            .stDataFrame div[data-testid="stDataFrameResizable"] {
+                position: relative;
+            }
+            .stDataFrame div[data-testid="stElementToolbar"] {
+                display: none !important;
+            }
+            </style>
+        """
+        st.markdown(hide_dataframe_hover_buttons, unsafe_allow_html=True)
+
+        
+
+        st.dataframe(
+            leaderboard_df,
+            column_config={
+                "Rank": "Rank",
+                "Username": "Username",
+                "Highest Streak": st.column_config.NumberColumn(
+                    "Highest Streak",
+                    
+                    format="%d 🔥",
+                ),
+            },
+            hide_index=True,
+            
+        
+        )
+
+        # st.write("Leaderboard updates when pressing next pokemon")
+
+        # if st.button("Refresh leaderboard"):
+        #     st.rerun()
+
+
+
+
+
+
+    
 
 with tab3:
     left, right, third = st.columns([1, 1, 1])
@@ -207,7 +416,14 @@ with tab3:
         st.subheader("Extra Options", anchor=False)
         # Display a toggle for if the user wants to guess the name also
         # Ensure the toggle respects the current session state value
-        guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name")
+        guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
+
+    # Add a logout button
+    if st.session_state['logged_in']:
+        if st.button("Logout"):
+            st.session_state['logged_in'] = False
+            st.success("Logged out successfully!")
+            st.rerun()
 
 
 
@@ -440,6 +656,8 @@ with tab1:
 
 
 
+
+
             
 # Function to reset the values in the dropdowns 
 def reset():
@@ -466,6 +684,9 @@ with tab1:
                         if st.session_state['current_streak'] > st.session_state['highest_streak']:
                             st.session_state['highest_streak'] = st.session_state['current_streak']
                             st.session_state['increased_high'] = True
+                            
+
+                        
                     else:
                         # If the user guessed wrong, reset the streak and say that streak is lost
                         if st.session_state['prev_streak'] > 0:
@@ -473,7 +694,7 @@ with tab1:
 
                         elif st.session_state['current_streak'] > 0:
                             st.toast("Streak lost! :fire:")
-                            st.toast("You have disabled a generation!")
+                            # st.toast("You have disabled a generation!")
 
                         st.session_state['current_streak'] = 0
                         st.session_state['prev_streak'] = 0            
@@ -488,6 +709,7 @@ with tab1:
                         if st.session_state["increased_high"] == True:
                             st.session_state['highest_streak'] = st.session_state['highest_streak']-1
                             st.session_state["increased_high"] = False
+                            
                         
                         if st.session_state['current_streak'] < 0:
                             st.session_state['current_streak'] = 0
@@ -514,6 +736,13 @@ with tab1:
                         if st.session_state['current_streak'] > st.session_state['highest_streak']:
                             st.session_state['highest_streak'] = st.session_state['current_streak']
                             st.session_state['increased_high'] = True
+                            
+
+
+                       
+
+
+                        
                     else:
                         # If the user guessed wrong, reset the streak and say that streak is lost
                         if st.session_state['prev_streak'] > 0:
@@ -521,7 +750,7 @@ with tab1:
 
                         elif st.session_state['current_streak'] > 0:
                             st.toast("Streak lost! :fire:")
-                            st.toast("You have disabled a generation!")
+                            # st.toast("You have disabled a generation!")
 
                         st.session_state['current_streak'] = 0
                         st.session_state['prev_streak'] = 0            
@@ -536,6 +765,7 @@ with tab1:
                         if st.session_state["increased_high"] == True:
                             st.session_state['highest_streak'] = st.session_state['highest_streak']-1
                             st.session_state["increased_high"] = False
+                            
                         
                         if st.session_state['current_streak'] < 0:
                             st.session_state['current_streak'] = 0
