@@ -1,8 +1,5 @@
 .env
 
 
-# Database
-*.db
 
-#txt
 bannedwords.txt
