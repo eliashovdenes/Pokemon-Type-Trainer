@@ -402,6 +402,8 @@ with tab3:
         if st.button("Logout"):
             st.session_state['logged_in'] = False
             cookies['username'] = ''
+            st.session_state['current_streak'] = 0
+            st.session_state['highest_streak'] =0
             cookies.save()
             st.success("Logged out successfully!")
             st.rerun()
