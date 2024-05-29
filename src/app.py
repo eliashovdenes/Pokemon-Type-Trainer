@@ -6,17 +6,32 @@ import hashlib
 import os
 import psycopg2
 from dotenv import load_dotenv
+from streamlit_cookies_manager import EncryptedCookieManager
 
 # Load environment variables from .env file (for local testing)
 load_dotenv()
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+COOKIE_PASSWORD = os.getenv('COOKIE_PASSWORD')
+
+
+# Set the page title and page icon
+st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
+
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
-# Set the page title and page icon
-st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
+# Initialize cookies manager
+cookies = EncryptedCookieManager(
+    prefix='pokemon_prep',
+    password=COOKIE_PASSWORD
+)
+
+if not cookies.ready():
+    st.stop()
+
+
 
 
 # Function to reset state variables when toggling "Guess the name"
@@ -38,6 +53,7 @@ def toggle_guess_name():
 #     st.rerun()
 
 #saving the highest streak to database
+
 def update_highest_streak(user_id, new_streak):
     conn = get_db_connection()
     c = conn.cursor()
@@ -110,13 +126,16 @@ gen_id_ranges = {
 }
 
 # Make a list of all of the names of a pokemon through the database
-conn = sqlite3.connect('pokemon.db')
-c = conn.cursor()
-c.execute('SELECT name FROM pokemon')
-listOfPokemonNames = [name[0] for name in c.fetchall()]
-listOfPokemonNames.insert(0, "Write here/Choose One:")
-conn.close()
+def get_pokemon_names():
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    c.execute('SELECT name FROM pokemon')
+    names = [name[0] for name in c.fetchall()]
+    conn.close()
+    names.insert(0, "Write here/Choose One:")
+    return names
 
+listOfPokemonNames = get_pokemon_names()
 
 
 
@@ -215,8 +234,8 @@ with leaderboard:
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
-    if not st.session_state['logged_in']:
-        st.write("To see and use leaderboard you have to login")
+    # if not st.session_state['logged_in']:
+        # st.write("To see and use leaderboard you have to login")
 
     def load_banned_words(file_path):
         with open(file_path, 'r') as file:
@@ -256,6 +275,7 @@ with leaderboard:
         conn.close()
         return True, "User registered successfully!"
 
+
     def login_user(username, password):
         conn = get_db_connection()
         c = conn.cursor()
@@ -263,6 +283,8 @@ with leaderboard:
         user = c.fetchone()
         conn.close()
         if user and check_password(user[2], password):
+            cookies['username'] = username
+            cookies.save()
             return user
         return None
     
@@ -272,49 +294,69 @@ with leaderboard:
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
-    left, right = st.columns(2)
 
-    with right:
-        if not st.session_state['logged_in']:
-            st.write("Not registered?")
 
-        with st.expander("Register now"):
+    # Check for a cookie
+    username_from_cookie = cookies.get('username')
 
+    
+
+
+    if username_from_cookie:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE username = %s', (username_from_cookie,))
+        user = c.fetchone()
+        conn.close()
+        if user:
+            st.session_state['logged_in'] = True
+            st.session_state['user_id'] = user[0]
+
+
+    if not st.session_state['logged_in']:
+        left, right = st.columns(2)
+
+        with right:
             if not st.session_state['logged_in']:
-                # st.write("Register")
-                username = st.text_input("Username", key='register_username')
-                password = st.text_input("Password", type="password", key='register_password')
-                if st.button("Register"):
-                    if not username.strip() or not password.strip():
-                        st.error("Username and password cannot be empty or just spaces.")
+                st.write("Not registered?")
 
-                    elif contains_banned_word(username):
-                        st.error("Username already taken")
-                
-                    else:
-                        success, message = create_user(username, password)
-                        if success:
-                            st.success(message)
+            with st.expander("Register now"):
+
+                if not st.session_state['logged_in']:
+                    # st.write("Register")
+                    username = st.text_input("Username", key='register_username')
+                    password = st.text_input("Password", type="password", key='register_password')
+                    if st.button("Register"):
+                        if not username.strip() or not password.strip():
+                            st.error("Username and password cannot be empty or just spaces.")
+
+                        elif contains_banned_word(username):
+                            st.error("Username already taken")
+                    
                         else:
-                            st.error(message)
+                            success, message = create_user(username, password)
+                            if success:
+                                st.success(message)
+                            else:
+                                st.error(message)
                         
                     
 
-    with left:
-        # Login Form
-        if not st.session_state['logged_in']:
-            st.write("Login")
-            username = st.text_input("Username", key='login_username')
-            password = st.text_input("Password", type="password", key='login_password')
-            if st.button("Login"):
-                user = login_user(username, password)
-                if user:
-                    st.session_state['logged_in'] = True
-                    st.session_state['user_id'] = user[0]
-                    st.success("Logged in successfully!")
-                    st.rerun()
-                else:
-                    st.error("Invalid credentials")
+        with left:
+            # Login Form
+            if not st.session_state['logged_in']:
+                st.write("Login")
+                username = st.text_input("Username", key='login_username')
+                password = st.text_input("Password", type="password", key='login_password')
+                if st.button("Login"):
+                    user = login_user(username, password)
+                    if user:
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_id'] = user[0]
+                        st.success("Logged in successfully!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid credentials")
 
 
 
@@ -440,6 +482,8 @@ with tab3:
     if st.session_state['logged_in']:
         if st.button("Logout"):
             st.session_state['logged_in'] = False
+            cookies['username'] = ''
+            cookies.save()
             st.success("Logged out successfully!")
             st.rerun()
 
