@@ -13,6 +13,12 @@ from streamlit_cookies_manager import EncryptedCookieManager
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
 
+
+
+
+
+
+
 # Load environment variables from .env file (for local testing)
 load_dotenv()
 
@@ -24,6 +30,8 @@ cookies = EncryptedCookieManager(
     prefix='pokemon_prep',
     password=COOKIE_PASSWORD
 )
+
+
 
 if not cookies.ready():
     st.stop()
@@ -187,25 +195,31 @@ correct_answers = {
     'secondary_typing': secondary_type
 }
 
+if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+
+# Check if user is already logged in via cookies
+if cookies.get('username'):
+    st.session_state['logged_in'] = True
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE username = %s', (cookies.get('username'),))
+        user = c.fetchone()
+        if user:
+            st.session_state['user_id'] = user[0]
+    finally:
+        release_db_connection(conn)
+
+if st.session_state['logged_in']:
+    st.caption("Logged in as " + cookies.get('username'))
+    
+    
+
 tab1, tab2, leaderboard, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Options", "About"])
 
 with leaderboard:
-
-    # Check if user is already logged in via cookies
-    if cookies.get('username'):
-        st.session_state['logged_in'] = True
-        conn = get_db_connection()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT * FROM users WHERE username = %s', (cookies.get('username'),))
-            user = c.fetchone()
-            if user:
-                st.session_state['user_id'] = user[0]
-        finally:
-            release_db_connection(conn)
-
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
         st.write("To see and use leaderboard you have to login")
@@ -696,3 +710,9 @@ with tab4:
             st.markdown("I made this site to train for sites such as [pokedoku.com](https://pokedoku.com). \n \n On this site it is crucial to know the typing and generation of pokemon. That is why I wanted to make a site where you could guess the generation, typing and name of a pokemon. \n \n  Try it out :point_right: [pokedoku.com](https://pokedoku.com)")
         with st.expander("Credits"):
             st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
+
+
+
+
+
+
