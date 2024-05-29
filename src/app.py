@@ -3,6 +3,17 @@ import random
 import sqlite3
 import pandas as pd
 import hashlib
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local testing)
+load_dotenv()
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
@@ -28,16 +39,16 @@ def toggle_guess_name():
 
 #saving the highest streak to database
 def update_highest_streak(user_id, new_streak):
-    conn = sqlite3.connect('persons.db')
+    conn = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT highest_streak FROM user_scores WHERE user_id = ?', (user_id,))
+    c.execute('SELECT highest_streak FROM user_scores WHERE user_id = %s', (user_id,))
     result = c.fetchone()
     if result:
         highest_streak = result[0]
         if new_streak > highest_streak:
-            c.execute('UPDATE user_scores SET highest_streak = ? WHERE user_id = ?', (new_streak, user_id))
+            c.execute('UPDATE user_scores SET highest_streak = %s WHERE user_id = %s', (new_streak, user_id))
     else:
-        c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (?, ?)', (user_id, new_streak))
+        c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (%s, %s)', (user_id, new_streak))
     conn.commit()
     conn.close()
 
@@ -221,31 +232,39 @@ with leaderboard:
 
     def hash_password(password):
         return hashlib.sha256(password.encode()).hexdigest()
+    
+    def check_password(stored_password_hash, provided_password):
+        return stored_password_hash == hash_password(provided_password)
 
     def create_user(username, password):
-        conn = sqlite3.connect('persons.db')
+        conn = get_db_connection()
         c = conn.cursor()
 
         # Check if the username is already taken
-        c.execute('SELECT * FROM users WHERE username = ?', (username,))
+        c.execute('SELECT * FROM users WHERE username = %s', (username,))
         user = c.fetchone()
         if user:
             conn.close()
-            return False
-    
+            return False, "Username already taken"
+
+        if contains_banned_word(username):
+            return False, "Username already taken"
+
         password_hash = hash_password(password)
-        c.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, password_hash))
+        c.execute('INSERT INTO users (username, password_hash) VALUES (%s, %s)', (username, password_hash))
         conn.commit()
         conn.close()
+        return True, "User registered successfully!"
 
     def login_user(username, password):
-        conn = sqlite3.connect('persons.db')
+        conn = get_db_connection()
         c = conn.cursor()
-        password_hash = hash_password(password)
-        c.execute('SELECT * FROM users WHERE username = ? AND password_hash = ?', (username, password_hash))
+        c.execute('SELECT * FROM users WHERE username = %s', (username,))
         user = c.fetchone()
         conn.close()
-        return user
+        if user and check_password(user[2], password):
+            return user
+        return None
     
 
     
@@ -273,12 +292,11 @@ with leaderboard:
                         st.error("Username already taken")
                 
                     else:
-                        new_user = create_user(username, password)
-
-                        if new_user == False:
-                            st.error("Username already taken")
+                        success, message = create_user(username, password)
+                        if success:
+                            st.success(message)
                         else:
-                            st.success("Registered successfully")
+                            st.error(message)
                         
                     
 
@@ -307,7 +325,7 @@ with leaderboard:
 
         # Fetch leaderboard data
         def fetch_leaderboard():
-            conn = sqlite3.connect('persons.db')
+            conn = get_db_connection()
             c = conn.cursor()
             c.execute('''
                 SELECT u.username, s.highest_streak
