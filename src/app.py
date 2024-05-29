@@ -8,6 +8,7 @@ import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
 from psycopg2 import pool
+from streamlit_cookies_manager import EncryptedCookieManager
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
@@ -16,6 +17,17 @@ st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.
 load_dotenv()
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+COOKIE_PASSWORD = os.getenv('COOKIE_PASSWORD')
+
+# Initialize cookies manager
+cookies = EncryptedCookieManager(
+    prefix='pokemon_prep',
+    password=COOKIE_PASSWORD
+)
+
+if not cookies.ready():
+    st.stop()
+
 if not DATABASE_URL:
     raise ValueError("No DATABASE_URL found in environment variables")
 
@@ -178,6 +190,20 @@ correct_answers = {
 tab1, tab2, leaderboard, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Options", "About"])
 
 with leaderboard:
+
+    # Check if user is already logged in via cookies
+    if cookies.get('username'):
+        st.session_state['logged_in'] = True
+        conn = get_db_connection()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT * FROM users WHERE username = %s', (cookies.get('username'),))
+            user = c.fetchone()
+            if user:
+                st.session_state['user_id'] = user[0]
+        finally:
+            release_db_connection(conn)
+
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
@@ -224,6 +250,8 @@ with leaderboard:
             c.execute('SELECT * FROM users WHERE username = %s', (username,))
             user = c.fetchone()
             if user and check_password(user[2], password):
+                cookies['username'] = username
+                cookies.save()
                 return user
             return None
         finally:
@@ -373,6 +401,8 @@ with tab3:
     if st.session_state['logged_in']:
         if st.button("Logout"):
             st.session_state['logged_in'] = False
+            cookies['username'] = ''
+            cookies.save()
             st.success("Logged out successfully!")
             st.rerun()
 
