@@ -1,7 +1,5 @@
 .env
 
-# Streamlit specific
-.streamlit/
 
 # Database
 *.db

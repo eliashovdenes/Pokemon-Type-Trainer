@@ -4,3 +4,7 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#ffb6c1"
 textColor = "#262730"
 font = 'sans serif'
+
+#.streamlit/config.toml
+[client]
+showErrorDetails = false
