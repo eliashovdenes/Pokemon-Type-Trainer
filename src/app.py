@@ -7,68 +7,51 @@ import os
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
-from streamlit_cookies_manager import EncryptedCookieManager
+from psycopg2 import pool
+
+# Set the page title and page icon
+st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
 
 # Load environment variables from .env file (for local testing)
 load_dotenv()
 
 DATABASE_URL = os.getenv('DATABASE_URL')
-COOKIE_PASSWORD = os.getenv('COOKIE_PASSWORD')
+if not DATABASE_URL:
+    raise ValueError("No DATABASE_URL found in environment variables")
 
-# Set the page title and page icon
-st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
+@st.cache_resource
+def init_connection_pool():
+    return pool.SimpleConnectionPool(1, 10, DATABASE_URL)
 
-# Create a connection pool
-conn_pool = psycopg2.pool.SimpleConnectionPool(1, 10, DATABASE_URL)
+conn_pool = init_connection_pool()
 
-# Initialize cookies manager
-cookies = EncryptedCookieManager(
-    prefix='pokemon_prep',
-    password=COOKIE_PASSWORD
-)
+def get_db_connection():
+    return conn_pool.getconn()
 
-if not cookies.ready():
-    st.stop()
+def release_db_connection(conn):
+    conn_pool.putconn(conn)
 
 # Function to reset state variables when toggling "Guess the name"
 def toggle_guess_name():
     st.session_state['correct_guess_made'] = False
     st.session_state['name_guess_bool'] = False
 
-@st.cache_data
-def get_pokemon_names():
-    conn = sqlite3.connect('pokemon.db')
-    c = conn.cursor()
-    c.execute('SELECT name FROM pokemon')
-    names = [name[0] for name in c.fetchall()]
-    conn.close()
-    names.insert(0, "Write here/Choose One:")
-    return names
+# Generator that produces the next char in the string
+# def next_char(s):
+#     for c in s:
+#         yield c
+#         time.sleep(0.05)
 
-listOfPokemonNames = get_pokemon_names()
+# Display the welcome message
+# if st.session_state["welcome"] == True:
+#     st.write_stream(next_char("Welcom to Pokemon Type Trainer!"))
+#     time.sleep(1)
+#     st.session_state["welcome"] = False
+#     st.rerun()
 
-def initialize_session_state():
-    if 'highest_streak' not in st.session_state:
-        st.session_state['highest_streak'] = 0
-    if 'increased_high' not in st.session_state:
-        st.session_state["increased_high"] = False
-    if 'prev_streak' not in st.session_state:
-        st.session_state['prev_streak'] = 0
-    if 'correct_guess_made' not in st.session_state:
-        st.session_state['correct_guess_made'] = True
-    if 'current_streak' not in st.session_state:
-        st.session_state['current_streak'] = 0
-    if 'show_answer_pressed' not in st.session_state:
-        st.session_state['show_answer_pressed'] = False
-    if 'guess_name' not in st.session_state:
-        st.session_state['guess_name'] = False
-    if "name_guess_bool" not in st.session_state:
-        st.session_state['name_guess_bool'] = False
-
-initialize_session_state()
-
+#saving the highest streak to database
 def update_highest_streak(user_id, new_streak):
-    conn = conn_pool.getconn()
+    conn = get_db_connection()
     try:
         c = conn.cursor()
         c.execute('SELECT highest_streak FROM user_scores WHERE user_id = %s', (user_id,))
@@ -81,16 +64,24 @@ def update_highest_streak(user_id, new_streak):
             c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (%s, %s)', (user_id, new_streak))
         conn.commit()
     finally:
-        conn_pool.putconn(conn)
+        release_db_connection(conn)
+
 
 def display_streak():
     st.subheader("Current Streak", anchor=False)
     st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
     st.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
     if st.session_state['logged_in']:
-        current_user_id = st.session_state['user_id']
-        update_highest_streak(current_user_id, st.session_state['highest_streak'])
+        if st.session_state['logged_in']:
+            current_user_id = st.session_state['user_id']
+            update_highest_streak(current_user_id, st.session_state['highest_streak'])
 
+    
+
+
+
+
+# Funcion to set all the answers to the correct answers
 def answer():
     st.session_state.generation_selection = generation
     st.session_state.typing_selection = primary_type
@@ -117,6 +108,42 @@ gen_id_ranges = {
     9: (906, 1025),
 }
 
+@st.cache_data
+def load_pokemon_names():
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    c.execute('SELECT name FROM pokemon')
+    names = [name[0] for name in c.fetchall()]
+    conn.close()
+    names.insert(0, "Write here/Choose One:")
+    return names
+
+listOfPokemonNames = load_pokemon_names()
+
+
+
+def initialize_session_state():
+    session_defaults = {
+        'highest_streak': 0,
+        'increased_high': False,
+        'prev_streak': 0,
+        'correct_guess_made': True,
+        'current_streak': 0,
+        'show_answer_pressed': False,
+        'guess_name': False,
+        'name_guess_bool': False
+    }
+    for key, value in session_defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+initialize_session_state()
+
+
+
+    
+
+# Function to fetch a Pokémon from the database
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
@@ -154,12 +181,16 @@ with leaderboard:
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
+    if not st.session_state['logged_in']:
+        st.write("To see and use leaderboard you have to login")
+
     def load_banned_words(file_path):
         with open(file_path, 'r') as file:
             banned_words = [line.strip().lower() for line in file.readlines()]
         return banned_words
 
-    banned_words = load_banned_words('bannedwords.txt')
+    if not st.session_state['logged_in']:
+        banned_words = load_banned_words('bannedwords.txt')
 
     def contains_banned_word(username):
         username_lower = username.lower()
@@ -172,7 +203,7 @@ with leaderboard:
         return stored_password_hash == hash_password(provided_password)
 
     def create_user(username, password):
-        conn = conn_pool.getconn()
+        conn = get_db_connection()
         try:
             c = conn.cursor()
             c.execute('SELECT * FROM users WHERE username = %s', (username,))
@@ -184,55 +215,57 @@ with leaderboard:
             conn.commit()
             return True, "User registered successfully!"
         finally:
-            conn_pool.putconn(conn)
+            release_db_connection(conn)
 
     def login_user(username, password):
-        conn = conn_pool.getconn()
+        conn = get_db_connection()
         try:
             c = conn.cursor()
             c.execute('SELECT * FROM users WHERE username = %s', (username,))
             user = c.fetchone()
             if user and check_password(user[2], password):
-                cookies['username'] = username
-                cookies.save()
                 return user
             return None
         finally:
-            conn_pool.putconn(conn)
+            release_db_connection(conn)
+    
 
-    username_from_cookie = cookies.get('username')
-    if username_from_cookie:
-        conn = conn_pool.getconn()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT * FROM users WHERE username = %s', (username_from_cookie,))
-            user = c.fetchone()
-            if user:
-                st.session_state['logged_in'] = True
-                st.session_state['user_id'] = user[0]
-        finally:
-            conn_pool.putconn(conn)
+    
+    # Registration Form
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
 
-    if not st.session_state['logged_in']:
-        left, right = st.columns(2)
-        with right:
+    left, right = st.columns(2)
+
+    with right:
+        if not st.session_state['logged_in']:
+            st.write("Not registered?")
+
+        with st.expander("Register now"):
+
             if not st.session_state['logged_in']:
-                st.write("Not registered?")
-            with st.expander("Register now"):
+                # st.write("Register")
                 username = st.text_input("Username", key='register_username')
                 password = st.text_input("Password", type="password", key='register_password')
                 if st.button("Register"):
                     if not username.strip() or not password.strip():
                         st.error("Username and password cannot be empty or just spaces.")
+
                     elif contains_banned_word(username):
                         st.error("Username already taken")
+                
                     else:
                         success, message = create_user(username, password)
                         if success:
                             st.success(message)
                         else:
                             st.error(message)
-        with left:
+                        
+                    
+
+    with left:
+        # Login Form
+        if not st.session_state['logged_in']:
             st.write("Login")
             username = st.text_input("Username", key='login_username')
             password = st.text_input("Password", type="password", key='login_password')
@@ -246,10 +279,17 @@ with leaderboard:
                 else:
                     st.error("Invalid credentials")
 
-    if st.session_state['logged_in']:
-        @st.cache_data
+
+
+    
+
+    if  st.session_state['logged_in']:
+        # st.title("You are logged in!")
+
+        # Fetch leaderboard data
+        @st.cache_data(ttl=60)  # Cache for 60 seconds
         def fetch_leaderboard():
-            conn = conn_pool.getconn()
+            conn = get_db_connection()
             try:
                 c = conn.cursor()
                 c.execute('''
@@ -265,8 +305,10 @@ with leaderboard:
                 leaderboard_df = leaderboard_df[["Rank", "Username", "Highest Streak"]]
                 return leaderboard_df
             finally:
-                conn_pool.putconn(conn)
+                release_db_connection(conn)
 
+        # Display the leaderboard
+        
         st.title("Leaderboard", anchor=False)
         leaderboard_df = fetch_leaderboard()
         hide_dataframe_hover_buttons = """
@@ -288,13 +330,23 @@ with leaderboard:
                 "Highest Streak": st.column_config.NumberColumn("Highest Streak", format="%d 🔥"),
             },
             hide_index=True,
+            
+        
         )
-    if st.session_state['logged_in'] and st.button("Logout"):
-        st.session_state['logged_in'] = False
-        cookies['username'] = ''
-        cookies.save()
-        st.success("Logged out successfully!")
-        st.rerun()
+        
+        left, right = st.columns([1,8])
+        with left:
+            with st.expander("?"):
+                st.write("Leaderboard may take som time to update")
+            
+
+        
+
+
+
+
+
+    
 
 with tab3:
     left, right, third = st.columns([1, 1, 1])
@@ -317,6 +369,64 @@ with tab3:
         st.subheader("Extra Options", anchor=False)
         guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
 
+    # Add a logout button
+    if st.session_state['logged_in']:
+        if st.button("Logout"):
+            st.session_state['logged_in'] = False
+            st.success("Logged out successfully!")
+            st.rerun()
+
+
+
+# Fetch and display the current Pokémon if new pokemon is ran
+if 'current_pokemon_id' in st.session_state:
+    pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
+
+
+# Hide various Streamlit stuff
+hide_github_icon = """
+    <style>
+    #GithubIcon {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_github_icon, unsafe_allow_html=True)
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            [data-testid="stActionButtonLabel"] {visibility: hidden;}
+            [data-testid="manage-app-button"] {visibility: hidden;}
+            .styles_terminalButton__JBj5T {visibility: hidden;}
+            .viewerBadge_container__r5tak styles_viewerBadge__CvC9N {visibility: hidden;}
+            .viewerBadge_link__qRIco {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
+
+
+        
+
+# Maybe UI for later:
+# st.toast("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed.", icon="🔍")   
+# st.code("Pokemon Type Trainer", language="python")
+# st.download_button("Download the code", data="Pokemon Type Trainer", file_name="Pokemon_Type_Trainer.py", mime="text/python", key="download_button")
+# st.info("Select the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
+# st.help()
+# with st.popover("Hello"):
+#     st.caption("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
+# st._bottom.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
+# st.link_button("GitHub","https://github.com/eliashovdenes/Pokemon-Type-Trainer", type="primary")        
+# st.popover
+# st.radio st.info
+
+
+
+# Display the Pokémon image and the guessing options
+    
 with tab1:
     with st.container():
         one, two, three = st.columns([3, 2, 3])
@@ -409,66 +519,121 @@ def reset():
 
 with tab1:
     with st.container():
-        if st.session_state['guess_name']:
-            if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
-                if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made']:
-                    st.session_state['current_streak'] += 1
-                    st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
-                    if st.session_state['current_streak'] > st.session_state['highest_streak']:
-                        st.session_state['highest_streak'] = st.session_state['current_streak']
-                        st.session_state['increased_high'] = True
-                else:
-                    if st.session_state['prev_streak'] > 0:
-                        st.toast("Streak lost! :fire: ")
-                    elif st.session_state['current_streak'] > 0:
-                        st.toast("Streak lost! :fire:")
-                    st.session_state['current_streak'] = 0
-                    st.session_state['prev_streak'] = 0            
-                st.session_state["answer_button"] = False
-                if st.button("Next Pokemon", on_click=reset):
-                    st.session_state["answer_button"] = True
-                    st.session_state['current_streak'] -= 1
-                    if st.session_state["increased_high"]:
-                        st.session_state['highest_streak'] -= 1
-                        st.session_state["increased_high"] = False
-                    if st.session_state['current_streak'] < 0:
+            
+            if st.session_state["guess_name"] == True:
+
+                if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
+                    # print("I am here in the name guess true")
+                    # If the user guessed correct on the first try, increase the streak
+                    
+                    if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
+                        st.session_state['current_streak'] += 1
+                        st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
+                        # If the current streak is higher than the highest streak, update the highest streak
+                        if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                            st.session_state['highest_streak'] = st.session_state['current_streak']
+                            st.session_state['increased_high'] = True
+                            
+
+                        
+                    else:
+                        # If the user guessed wrong, reset the streak and say that streak is lost
+                        if st.session_state['prev_streak'] > 0:
+                            st.toast("Streak lost! :fire: ")                   
+
+                        elif st.session_state['current_streak'] > 0:
+                            st.toast("Streak lost! :fire:")
+                            # st.toast("You have disabled a generation!")
+
                         st.session_state['current_streak'] = 0
-                    new_pokemon()
-                    st.session_state['generation_correct'] = False
-                    st.session_state['typing_correct'] = False
-                    st.session_state['correct_guess_made'] = True
-                    st.session_state['name_guess_bool'] = False
-                    st.rerun()
-        else:
-            if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-                if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made']:
-                    st.session_state['current_streak'] += 1
-                    st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
-                    if st.session_state['current_streak'] > st.session_state['highest_streak']:
-                        st.session_state['highest_streak'] = st.session_state['current_streak']
-                        st.session_state['increased_high'] = True
-                else:
-                    if st.session_state['prev_streak'] > 0:
-                        st.toast("Streak lost! :fire: ")
-                    elif st.session_state['current_streak'] > 0:
-                        st.toast("Streak lost! :fire:")
-                    st.session_state['current_streak'] = 0
-                    st.session_state['prev_streak'] = 0            
-                st.session_state["answer_button"] = False
-                if st.button("Next Pokemon", on_click=reset):
-                    st.session_state["answer_button"] = True
-                    st.session_state['current_streak'] -= 1
-                    if st.session_state["increased_high"]:
-                        st.session_state['highest_streak'] -= 1
-                        st.session_state["increased_high"] = False
-                    if st.session_state['current_streak'] < 0:
+                        st.session_state['prev_streak'] = 0            
+                    
+                    st.session_state["answer_button"] = False
+
+                    # If the user clicks the button, get a new Pokémon and reset the dropdowns
+                    if st.button("Next Pokemon", on_click=reset):
+                        st.session_state["answer_button"] = True
+                        st.session_state['current_streak'] -= 1
+
+                        if st.session_state["increased_high"] == True:
+                            st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                            st.session_state["increased_high"] = False
+                                                       
+                        
+                        if st.session_state['current_streak'] < 0:
+                            st.session_state['current_streak'] = 0
+
+                        new_pokemon()
+                        # Clear previous answers correctness
+                        st.session_state['generation_correct'] = False
+                        st.session_state['typing_correct'] = False
+                        st.session_state['correct_guess_made'] = True
+                        st.session_state['name_guess_bool'] = False
+                        
+                        st.rerun()  # This reruns the script to reflect the new state
+            else:
+                if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+
+                    # print("I am here in the name guess not active")
+                    
+                    # If the user guessed correct on the first try, increase the streak
+                    # st.session_state['name_guess_bool'] = False
+                    if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
+                        st.session_state['current_streak'] += 1
+                        st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
+                        # If the current streak is higher than the highest streak, update the highest streak
+                        if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                            st.session_state['highest_streak'] = st.session_state['current_streak']
+                            st.session_state['increased_high'] = True
+                            
+
+
+                       
+
+
+                        
+                    else:
+                        # If the user guessed wrong, reset the streak and say that streak is lost
+                        if st.session_state['prev_streak'] > 0:
+                            st.toast("Streak lost! :fire: ")                   
+
+                        elif st.session_state['current_streak'] > 0:
+                            st.toast("Streak lost! :fire:")
+                            # st.toast("You have disabled a generation!")
+
                         st.session_state['current_streak'] = 0
-                    new_pokemon()
-                    st.session_state['generation_correct'] = False
-                    st.session_state['typing_correct'] = False
-                    st.session_state['correct_guess_made'] = True
-                    st.session_state['name_guess_bool'] = False
-                    st.rerun()
+                        st.session_state['prev_streak'] = 0            
+                    
+                    st.session_state["answer_button"] = False
+
+                    # If the user clicks the button, get a new Pokémon and reset the dropdowns
+                    if st.button("Next Pokemon", on_click=reset):
+                        st.session_state["answer_button"] = True
+                        st.session_state['current_streak'] -= 1
+
+                        if st.session_state["increased_high"] == True:
+                            st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                            st.session_state["increased_high"] = False
+
+    
+                            
+                        
+                        if st.session_state['current_streak'] < 0:
+                            st.session_state['current_streak'] = 0
+
+                        new_pokemon()
+                        # Clear previous answers correctness
+                        st.session_state['generation_correct'] = False
+                        st.session_state['typing_correct'] = False
+                        st.session_state['correct_guess_made'] = True
+                        st.session_state['name_guess_bool'] = False
+                        
+                        st.rerun()  # This reruns the script to reflect the new state
+            
+    
+    
+
+    # Display the answers
     with st.container():
         if st.session_state.get("answer_button", True):
             if st.button("Show me the answers", on_click=answer):
