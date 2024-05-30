@@ -88,7 +88,7 @@ def update_highest_streak(user_id, new_streak):
 
 
 def display_streak():
-    st.subheader("Current Streak", anchor=False)
+    # st.subheader("Current Streak", anchor=False)
     st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
     st.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
     if st.session_state['logged_in']:
@@ -588,27 +588,7 @@ with tab1:
                         # print("I am here in the name guess true")
                         # If the user guessed correct on the first try, increase the streak
                         
-                        if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
-                            st.session_state['current_streak'] += 1
-                            st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
-                            # If the current streak is higher than the highest streak, update the highest streak
-                            if st.session_state['current_streak'] > st.session_state['highest_streak']:
-                                st.session_state['highest_streak'] = st.session_state['current_streak']
-                                st.session_state['increased_high'] = True
-                                
-
-                            
-                        else:
-                            # If the user guessed wrong, reset the streak and say that streak is lost
-                            if st.session_state['prev_streak'] > 0:
-                                st.toast("Streak lost! :fire: ")                   
-
-                            elif st.session_state['current_streak'] > 0:
-                                st.toast("Streak lost! :fire:")
-                                # st.toast("You have disabled a generation!")
-
-                            st.session_state['current_streak'] = 0
-                            st.session_state['prev_streak'] = 0            
+                             
                         
                         st.session_state["answer_button"] = False
 
@@ -716,6 +696,10 @@ with tab2:
     display_streak()
     if len(listOfActiveGensNum) != 9:
         st.markdown(" Enable all generations to gain streak :exclamation:")
+
+    if st.session_state["guess_name"]:
+        st.markdown(" Disable name guessing to gain streak :exclamation:")
+
 
 
     
