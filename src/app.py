@@ -11,7 +11,7 @@ from psycopg2 import pool
 from streamlit_cookies_manager import EncryptedCookieManager
 
 # Set the page title and page icon
-st.set_page_config(page_title="Pokemon type trainer!", page_icon="../data/logo2.png", layout="wide")
+st.set_page_config(page_title="Pokemon type trainer!", page_icon="../pictures/logo2.png", layout="wide")
 
 
 
@@ -230,7 +230,8 @@ with leaderboard:
         return banned_words
 
     if not st.session_state['logged_in']:
-        banned_words = load_banned_words('bannedwords.txt')
+        banned_words = load_banned_words('./helper_files/bannedwords.txt')
+        
 
     def contains_banned_word(username):
         username_lower = username.lower()
@@ -376,10 +377,27 @@ with leaderboard:
         
         )
         
-        left, right = st.columns([1,8])
-        with left:
-            with st.expander("?"):
-                st.write("Leaderboard may take som time to update")
+        
+       
+       
+        # left, right = st.columns([1,4])
+        # with left:
+        #     with st.expander("?"):
+        #         st.write("Leaderboard updates take 1 min")
+        st.divider()
+        # Add a logout button
+        if st.session_state['logged_in']:
+            st.subheader("Account", anchor=False)
+            st.write("User: ", cookies.get('username') )
+            if st.button("Logout"):
+                st.session_state['logged_in'] = False
+                cookies['username'] = ''
+                st.session_state['current_streak'] = 0
+                st.session_state['highest_streak'] =0
+                cookies.save()
+                st.success("Logged out successfully!")
+                st.rerun()
+
             
 
         
@@ -411,17 +429,8 @@ with tab3:
         st.subheader("Extra Options", anchor=False)
         guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
 
-    # Add a logout button
-    if st.session_state['logged_in']:
-        if st.button("Logout"):
-            st.session_state['logged_in'] = False
-            cookies['username'] = ''
-            st.session_state['current_streak'] = 0
-            st.session_state['highest_streak'] =0
-            cookies.save()
-            st.success("Logged out successfully!")
-            st.rerun()
-
+    
+    
 
 
 # Fetch and display the current Pokémon if new pokemon is ran
@@ -708,14 +717,43 @@ with tab2:
     if len(listOfActiveGensNum) != 9:
         st.markdown(" Enable all generations to gain streak :exclamation:")
 
+
+    
 with tab4:
-    left, center, right = st.columns([1, 3, 1])
+    left, center, right = st.columns([1, 1, 1])
     with left:
-        with st.expander("What is this?"):
-            st.markdown("Welcome to the Pokemon Type Trainer! \n \n Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon. \n \n The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations. \n \n If you guess correct on the first try you will get a streak :fire:. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you deselect a generation. \n \n You can also enable name guessing! Not guessing the name correctly does not affect the streak. \n \n Good luck!")
-        with st.expander("Inspiration"):
-            st.markdown("I made this site to train for sites such as [pokedoku.com](https://pokedoku.com). \n \n On this site it is crucial to know the typing and generation of pokemon. That is why I wanted to make a site where you could guess the generation, typing and name of a pokemon. \n \n  Try it out :point_right: [pokedoku.com](https://pokedoku.com)")
-        with st.expander("Credits"):
+        with st.expander(f"**What is this?**"):
+           
+            st.write(f"**Welcome to the Pokemon Type Trainer!**")
+            
+            st.markdown("Guess the generation and typing of the random Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon.")
+            st.write("")
+            
+
+            st.write(f"**Generation Selection**")
+            
+            st.markdown("You can select and deselect generations in Options. The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
+            st.write("")
+            
+           
+
+            st.write(f"**Streak**")
+            
+            st.markdown("If you guess correct on the first try you will get a streak 🔥. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you change your options.")
+            st.write("")
+            
+
+            st.write(f"**Extra Options**")
+
+            st.markdown("You can also enable name guessing!")
+            st.write("")
+            
+
+
+
+        with st.expander(f"**Inspiration**"):
+            st.markdown("I made this site to train for sites such as [pokedoku.com](https://pokedoku.com). \n \n On pokedoku it is crucial to know the typing and generation of pokemon. That is why I wanted to make a site where you could guess the generation, typing and name of a pokemon. \n \n  Try it out :point_right: [pokedoku.com](https://pokedoku.com)")
+        with st.expander(f"**Credits**"):
             st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
 
 
