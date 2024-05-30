@@ -504,6 +504,9 @@ with tab1:
                 if selected_generation != 'Choose One:':
                     if selected_generation == correct_answers['generation']:
                         st.session_state['generation_correct'] = True
+                        # Save typing selections before rerun
+                        st.session_state.typing_selection = st.session_state.typing_selection
+                        st.session_state.typing_selection2 = st.session_state.typing_selection2
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
@@ -541,7 +544,7 @@ with tab1:
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
                 else:
-                    st.error("Please select atleast the primary typing.")
+                    st.error("Please select at least the primary typing.")
             elif typing_disabled:
                 st.success("Correct!")
             if st.session_state['guess_name']:
