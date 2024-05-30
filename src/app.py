@@ -35,7 +35,6 @@ cookies = EncryptedCookieManager(
 )
 
 
-
 if not cookies.ready():
     st.stop()
 
@@ -59,6 +58,14 @@ def toggle_guess_name():
     st.session_state['correct_guess_made'] = False
     st.session_state['name_guess_bool'] = False
 
+
+# Initialize daily challenge completion in cookies
+if 'daily_challenge_date' not in cookies:
+    cookies['daily_challenge_date'] = ''
+
+if 'daily_challenge_score' not in cookies:
+    cookies['daily_challenge_score'] = '0'
+
 # Initialize session state if not already done
 if 'daily_challenge_active' not in st.session_state:
     st.session_state['daily_challenge_active'] = False
@@ -69,6 +76,13 @@ if 'daily_challenge' not in st.session_state:
         'current_index': 0,
         'guesses': []
     }
+
+
+# Fetch today's date
+today_date = datetime.now().strftime('%Y-%m-%d')
+
+# Check if the user has already completed the daily challenge today
+daily_challenge_completed_today = cookies.get('daily_challenge_date') == today_date
 
 #saving the highest streak to database
 def update_highest_streak(user_id, new_streak):
@@ -236,7 +250,16 @@ if cookies.get('username'):
         release_db_connection(conn)
 
 if st.session_state['logged_in']:
-    st.caption("Logged in as " + cookies.get('username'))
+    try:
+        daily_score = int(cookies.get('daily_challenge_score', '0'))
+    except ValueError:
+        daily_score = 0
+
+    st.caption(f"Logged in as {cookies.get('username')} - Daily Score: {daily_score}/10")
+else:
+    st.caption("Login to use all features")
+
+
     
     
 
@@ -506,18 +529,18 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Display the Pokémon image and the guessing options
     
 with tab1:
-    # st.subheader("Options", anchor=False)
+    
     if st.session_state['logged_in']:
-        daily_challenge_toggle = st.checkbox(
-            "Enable Daily Challenge",
-            value=st.session_state['daily_challenge_active'],
-            key="daily_challenge_toggle",
-            on_change=toggle_daily_challenge,
-            disabled=st.session_state['daily_challenge_active']
-        )
         
-        if st.session_state['daily_challenge_active']:
-            st.write("Daily challenge is active. You cannot disable it once enabled.")
+        
+        if not daily_challenge_completed_today:
+            daily_challenge_toggle = st.checkbox(
+                "Enable Daily Challenge",
+                value=st.session_state['daily_challenge_active'],
+                key="daily_challenge_toggle",
+                on_change=toggle_daily_challenge,
+                disabled=st.session_state['daily_challenge_active']
+            )
     else:
         st.write("You must be logged in to enable the daily challenge.")
 
@@ -534,13 +557,11 @@ with tab1:
 
                 one, two, three = st.columns([3, 2, 3])
                 with one:
-                    left, right = st.columns(2)
-                    with left:
-                        st.subheader("Current Pokemon:", anchor=False)
-                        st.image(image_url, width=300, caption=pokemon_name)
-                        hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
-                        st.markdown(hide_img_fs, unsafe_allow_html=True)
-                        st.write(f"{current_index + 1}/10")
+                    st.subheader("Current Pokemon:", anchor=False)
+                    st.image(image_url, width=300, caption=pokemon_name)
+                    hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
+                    st.markdown(hide_img_fs, unsafe_allow_html=True)
+                    st.write(f"{current_index + 1}/10")
 
                 with two:
                     selected_generation = st.selectbox(
@@ -578,9 +599,18 @@ with tab1:
                     new_pokemon()
                     st.rerun()
         else:
-            st.write(f"Your score: {st.session_state['daily_challenge']['score']}/10")
+            # Update cookies with the completed daily challenge score and date
+            cookies['daily_challenge_date'] = today_date
+            cookies['daily_challenge_score'] = str(st.session_state['daily_challenge']['score'])
+            cookies.save()
+            
+            # st.write(f"Your score: {st.session_state['daily_challenge']['score']}/10")
             st.session_state['daily_challenge']['completed'] = True
+            # st.session_state['daily_challenge_active'] = False
+
+            
             st.session_state['daily_challenge_active'] = False
+                
 
     # If not in daily challenge mode, use the existing logic
     if not st.session_state['daily_challenge_active']:
