@@ -101,6 +101,56 @@ def update_highest_streak(user_id, new_streak):
     finally:
         release_db_connection(conn)
 
+# Function to save the daily score only if it doesn't already exist for the same day
+def save_daily_score(user_id, score_date, daily_score):
+    current_date = datetime.now().date()
+
+    # Convert score_date to a datetime.date object if it's a string
+    if isinstance(score_date, str):
+        score_date = datetime.strptime(score_date, "%Y-%m-%d").date()
+    
+    if score_date == current_date:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        try:
+            # Check if a score already exists for the user on the given date
+            cur.execute("""
+                SELECT 1 FROM user_daily_scores
+                WHERE user_id = %s AND score_date = %s;
+            """, (user_id, score_date))
+            result = cur.fetchone()
+            
+            if result is None:
+                # No existing score for this user and date, proceed to insert the new score
+                cur.execute("""
+                    INSERT INTO user_daily_scores (user_id, score_date, daily_score)
+                    VALUES (%s, %s, %s);
+                """, (user_id, score_date, daily_score))
+                conn.commit()
+            else:
+                print(f"Score for user_id {user_id} on {score_date} already exists.")
+        finally:
+            cur.close()
+            conn.close()
+    else:
+        print(f"Attempted to save a score for a different date: {score_date}. Current date is {current_date}.")
+        print(f"000{type(score_date)}000")
+        print(f"000{type(current_date)}000")
+        
+
+
+
+
+def wipe_daily_scores():
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM user_daily_scores")
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
 
 def display_streak():
     # st.subheader("Current Streak", anchor=False)
@@ -255,7 +305,7 @@ if st.session_state['logged_in']:
     except ValueError:
         daily_score = 0
 
-    st.caption(f"Logged in as {cookies.get('username')} - Daily Score: {daily_score}/10")
+    st.caption(f"****Logged in as {cookies.get('username')} - Daily Score: {daily_score}/10****")
 else:
     st.caption("Login to use all features")
 
@@ -333,7 +383,6 @@ with leaderboard:
         with st.expander("Register now"):
 
             if not st.session_state['logged_in']:
-                # st.write("Register")
                 username = st.text_input("Username", key='register_username')
                 password = st.text_input("Password", type="password", key='register_password')
                 if st.button("Register"):
@@ -373,55 +422,115 @@ with leaderboard:
     
 
     if  st.session_state['logged_in']:
-        # st.title("You are logged in!")
 
-        # Fetch leaderboard data
-        @st.cache_data(ttl=60)  # Cache for 60 seconds
-        def fetch_leaderboard():
-            conn = get_db_connection()
-            try:
-                c = conn.cursor()
-                c.execute('''
-                    SELECT u.username, s.highest_streak
-                    FROM user_scores s
-                    JOIN users u ON s.user_id = u.user_id
-                    ORDER BY s.highest_streak DESC
-                    LIMIT 10
-                ''')
-                leaderboard = c.fetchall()
-                leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Highest Streak"])
-                leaderboard_df["Rank"] = leaderboard_df.index + 1
-                leaderboard_df = leaderboard_df[["Rank", "Username", "Highest Streak"]]
-                return leaderboard_df
-            finally:
-                release_db_connection(conn)
+        left, right, bin = st.columns([2,2,5])
+        with left:
+            # Fetch leaderboard data
+            @st.cache_data(ttl=60)  # Cache for 60 seconds
+            def fetch_leaderboard():
+                conn = get_db_connection()
+                try:
+                    c = conn.cursor()
+                    c.execute('''
+                        SELECT u.username, s.highest_streak
+                        FROM user_scores s
+                        JOIN users u ON s.user_id = u.user_id
+                        ORDER BY s.highest_streak DESC
+                        LIMIT 30
+                    ''')
+                    leaderboard = c.fetchall()
+                    leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Highest Streak"])
+                    leaderboard_df["Rank"] = leaderboard_df.index + 1
+                    leaderboard_df = leaderboard_df[["Rank", "Username", "Highest Streak"]]
+                    return leaderboard_df
+                finally:
+                    release_db_connection(conn)
 
-        # Display the leaderboard
-        
-        st.title("Leaderboard", anchor=False)
-        leaderboard_df = fetch_leaderboard()
-        hide_dataframe_hover_buttons = """
-            <style>
-            .stDataFrame div[data-testid="stDataFrameResizable"] {
-                position: relative;
-            }
-            .stDataFrame div[data-testid="stElementToolbar"] {
-                display: none !important;
-            }
-            </style>
-        """
-        st.markdown(hide_dataframe_hover_buttons, unsafe_allow_html=True)
-        st.dataframe(
-            leaderboard_df,
-            column_config={
-                "Rank": "Rank",
-                "Username": "Username",
-                "Highest Streak": st.column_config.NumberColumn("Highest Streak", format="%d 🔥"),
-            },
-            hide_index=True,
-            
-        
-        )
+            # Display the leaderboard
+            st.subheader("Highest Streak", anchor=False)
+            leaderboard_df = fetch_leaderboard()
+
+            # Customize the highest streak column with emojis
+            leaderboard_df["Highest Streak"] = leaderboard_df.apply(
+                lambda row: f"{row['Highest Streak']} 🥇" if row['Rank'] == 1 else f"{row['Highest Streak']} 🔥", axis=1
+            )
+
+            hide_dataframe_hover_buttons = """
+                <style>
+                .stDataFrame div[data-testid="stDataFrameResizable"] {
+                    position: relative;
+                }
+                .stDataFrame div[data-testid="stElementToolbar"] {
+                    display: none !important;
+                }
+                </style>
+            """
+            st.markdown(hide_dataframe_hover_buttons, unsafe_allow_html=True)
+
+            st.dataframe(
+                leaderboard_df,
+                column_config={
+                    "Rank": "Rank",
+                    "Username": "Username",
+                    "Highest Streak": st.column_config.TextColumn("Highest Streak"),
+                },
+                hide_index=True,
+            )
+
+        with right:
+
+            # Fetch daily leaderboard data
+            @st.cache_data(ttl=60)  # Cache for 60 seconds
+            def fetch_daily_leaderboard():
+                conn = get_db_connection()
+                try:
+                    c = conn.cursor()
+                    c.execute('''
+                        SELECT u.username, ds.daily_score
+                        FROM user_daily_scores ds
+                        JOIN users u ON ds.user_id = u.user_id
+                        WHERE ds.score_date = CURRENT_DATE
+                        ORDER BY ds.daily_score DESC
+                        LIMIT 30
+                    ''')
+                    leaderboard = c.fetchall()
+                    leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Daily Score"])
+                    leaderboard_df["Rank"] = leaderboard_df.index + 1
+                    leaderboard_df = leaderboard_df[["Rank", "Username", "Daily Score"]]
+                    return leaderboard_df
+                finally:
+                    release_db_connection(conn)
+
+            # Display the daily score leaderboard
+            st.subheader("Daily Score", anchor=False)
+            daily_leaderboard_df = fetch_daily_leaderboard()
+
+            # Customize the daily score column with emojis
+            daily_leaderboard_df["Daily Score"] = daily_leaderboard_df.apply(
+                lambda row: f"{row['Daily Score']} 🥇" if row['Rank'] == 1 else f"{row['Daily Score']} 😎", axis=1
+            )
+
+            hide_dataframe_hover_buttons = """
+                <style>
+                .stDataFrame div[data-testid="stDataFrameResizable"] {
+                    position: relative;
+                }
+                .stDataFrame div[data-testid="stElementToolbar"] {
+                    display: none !important;
+                }
+                </style>
+            """
+            st.markdown(hide_dataframe_hover_buttons, unsafe_allow_html=True)
+
+            st.dataframe(
+                daily_leaderboard_df,
+                column_config={
+                    "Rank": "Rank",
+                    "Username": "Username",
+                    "Daily Score": st.column_config.TextColumn("Daily Score"),
+                },
+                hide_index=True,
+            )
         
         
        
@@ -596,20 +705,27 @@ with tab1:
                     st.session_state['daily_challenge']['current_index'] += 1
                     if st.session_state['daily_challenge']['current_index'] < len(daily_pokemon_ids):
                         st.session_state['current_pokemon_id'] = daily_pokemon_ids[st.session_state['daily_challenge']['current_index']]
-                    new_pokemon()
+                    print("halla anal")
                     st.rerun()
         else:
             # Update cookies with the completed daily challenge score and date
             cookies['daily_challenge_date'] = today_date
             cookies['daily_challenge_score'] = str(st.session_state['daily_challenge']['score'])
             cookies.save()
-            
-            # st.write(f"Your score: {st.session_state['daily_challenge']['score']}/10")
-            st.session_state['daily_challenge']['completed'] = True
-            # st.session_state['daily_challenge_active'] = False
 
-            
+            print("\n \n \n \n \n \n \n \n \n")
+            print("Saving now!!:")
+            print("user id: ",st.session_state['user_id'])
+            print("today date: ",today_date)
+            print("score: ",st.session_state['daily_challenge']['score'])
+            print("\n \n \n \n \n \n \n \n \n")
+            save_daily_score(st.session_state['user_id'], today_date, st.session_state['daily_challenge']['score'])
+
+
+            st.session_state['daily_challenge']['completed'] = True
             st.session_state['daily_challenge_active'] = False
+            new_pokemon()
+            st.rerun()
                 
 
     # If not in daily challenge mode, use the existing logic

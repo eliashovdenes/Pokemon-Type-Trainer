@@ -21,11 +21,24 @@ CREATE TABLE IF NOT EXISTS user_scores (
 );
 """
 
+# New table for daily scores
+create_user_daily_scores_table = """
+CREATE TABLE IF NOT EXISTS user_daily_scores (
+    daily_score_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    score_date DATE NOT NULL,
+    daily_score INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    UNIQUE (user_id, score_date)  -- Ensure one score per user per day
+);
+"""
+
 def initialize_db():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
-    cur.execute(create_users_table)
-    cur.execute(create_user_scores_table)
+    # cur.execute(create_users_table)
+    # cur.execute(create_user_scores_table)
+    cur.execute(create_user_daily_scores_table)
     conn.commit()
     cur.close()
     conn.close()
