@@ -313,12 +313,11 @@ else:
     
     
 
-tab1, tab2, leaderboard, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Options", "About"])
+tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Account", "Options", "About"])
 
-with leaderboard:
+with account:
 
-    if not st.session_state['logged_in']:
-        st.write("To see and use leaderboard you have to login")
+    
 
     def load_banned_words(file_path):
         with open(file_path, 'r') as file:
@@ -380,7 +379,7 @@ with leaderboard:
         if not st.session_state['logged_in']:
             st.write("Not registered?")
 
-        with st.expander("Register now"):
+        with st.expander("Sign up now"):
 
             if not st.session_state['logged_in']:
                 username = st.text_input("Username", key='register_username')
@@ -417,11 +416,29 @@ with leaderboard:
                 else:
                     st.error("Invalid credentials")
 
+        
+        
+        # Add a logout button
+        if st.session_state['logged_in']:
+            st.subheader("Account", anchor=False)
+            st.write("User: ", cookies.get('username') )
+            if st.button("Logout"):
+                st.session_state['logged_in'] = False
+                cookies['username'] = ''
+                st.session_state['current_streak'] = 0
+                st.session_state['highest_streak'] =0
+                cookies.save()
+                st.success("Logged out successfully!")
+                st.rerun()
 
 
-    
 
-    if  st.session_state['logged_in']:
+with leaderboard:
+     
+     if not st.session_state['logged_in']:
+        st.write("To view and participate in the leaderboard, please log in to your account. Go to the account page to log in or sign up.")
+
+     if  st.session_state['logged_in']:
 
         left, right, bin = st.columns([2,2,5])
         with left:
@@ -531,27 +548,6 @@ with leaderboard:
                 },
                 hide_index=True,
             )
-        
-        
-       
-       
-        # left, right = st.columns([1,4])
-        # with left:
-        #     with st.expander("?"):
-        #         st.write("Leaderboard updates take 1 min")
-        st.divider()
-        # Add a logout button
-        if st.session_state['logged_in']:
-            st.subheader("Account", anchor=False)
-            st.write("User: ", cookies.get('username') )
-            if st.button("Logout"):
-                st.session_state['logged_in'] = False
-                cookies['username'] = ''
-                st.session_state['current_streak'] = 0
-                st.session_state['highest_streak'] =0
-                cookies.save()
-                st.success("Logged out successfully!")
-                st.rerun()
 
             
 
