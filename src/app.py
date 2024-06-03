@@ -996,6 +996,9 @@ with tab2:
         if st.session_state["guess_name"]:
             st.markdown(" Disable name guessing to gain streak :exclamation:")
 
+        if st.session_state["non_random_mode"]:
+            st.markdown("Disable non-random mode to gain streak :exclamation:")
+
 with tab4:
     left, center, right = st.columns([1, 1, 1])
     with left:
