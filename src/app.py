@@ -211,8 +211,10 @@ def initialize_session_state():
         'name_guess_bool': False,
         'non_random_mode': False,  # Add non-random mode to session state
         'pokemon_index': 0,         # Add a Pokémon index to session state
+        'start_generation': None,   # Add a starting generation to session state
         'start_pokemon': '',        # Add a starting Pokémon name to session state
-        'start_pokemon_id': None    # Add a starting Pokémon ID to session state
+        'start_pokemon_id': None,   # Add a starting Pokémon ID to session state
+        'available_pokemons': []    # Add available Pokémon list to session state
     }
     for key, value in session_defaults.items():
         if key not in st.session_state:
@@ -248,6 +250,16 @@ def fetch_pokemon(pokemon_id):
     pokemon = c.fetchone()
     conn.close()
     return pokemon
+
+
+def fetch_pokemon_by_generation(generation):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    gen_range = gen_id_ranges[generation]
+    c.execute('SELECT name FROM pokemon WHERE id BETWEEN ? AND ?', gen_range)
+    pokemons = [name[0] for name in c.fetchall()]
+    conn.close()
+    return pokemons
 
 def fetch_pokemon_id_by_name(pokemon_name):
     conn = sqlite3.connect('pokemon.db')
@@ -541,7 +553,6 @@ with tab3:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = False
                 st.session_state["Enable all"] = False
-                
             else:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = True
@@ -557,15 +568,19 @@ with tab3:
 
         st.checkbox("Non-Random Mode", value=st.session_state['non_random_mode'], key='non_random_mode')  # Add this line
         if st.session_state['non_random_mode']:
-            st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokemon:", listOfPokemonNames, index=0, key='start_pokemon_name')
-            if st.button("Set Start Pokémon"):
-                start_pokemon_id = fetch_pokemon_id_by_name(st.session_state['start_pokemon'])
-                if start_pokemon_id:
-                    st.session_state['start_pokemon_id'] = start_pokemon_id
-                    st.session_state['pokemon_index'] = 0
-                    st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
-                else:
-                    st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
+            selected_generation = st.selectbox("Select a Generation:", [f'Gen {gen}' for gen in range(1, 10)], index=0, key='start_generation')
+            if selected_generation:
+                selected_gen = int(selected_generation.split()[1])
+                st.session_state['available_pokemons'] = fetch_pokemon_by_generation(selected_gen)
+                st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", st.session_state['available_pokemons'], index=0, key='start_pokemon_name')
+                if st.button("Set Start Pokémon"):
+                    start_pokemon_id = fetch_pokemon_id_by_name(st.session_state['start_pokemon'])
+                    if start_pokemon_id:
+                        st.session_state['start_pokemon_id'] = start_pokemon_id
+                        st.session_state['pokemon_index'] = 0
+                        st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
+                    else:
+                        st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
         
 
 if 'current_pokemon_id' in st.session_state:
@@ -605,6 +620,8 @@ with tab1:
             )
     else:
         st.write("You must be logged in to enable the daily challenge.")
+
+    
 
     
 
