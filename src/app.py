@@ -277,6 +277,16 @@ def new_pokemon():
     if st.session_state['non_random_mode']:
         if st.session_state['start_pokemon_id'] is not None:
             st.session_state['current_pokemon_id'] = st.session_state['start_pokemon_id'] + st.session_state['pokemon_index']
+            
+            numbers = [num for num, _ in st.session_state['available_pokemons'] if isinstance(num, int)]
+            
+            
+            if st.session_state['current_pokemon_id'] not in numbers:
+                print("Id not in gen")
+                st.session_state['start_pokemon_id'] = st.session_state['available_pokemons'][0][0]
+                st.session_state['pokemon_index'] = 0
+                st.session_state['current_pokemon_id'] = st.session_state['start_pokemon_id'] + st.session_state['pokemon_index']
+
             st.session_state['pokemon_index'] += 1
         else:
             st.error("Please select a valid starting Pokémon.")
