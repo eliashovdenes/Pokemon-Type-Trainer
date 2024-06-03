@@ -210,7 +210,9 @@ def initialize_session_state():
         'guess_name': False,
         'name_guess_bool': False,
         'non_random_mode': False,  # Add non-random mode to session state
-        'pokemon_index': 0         # Add a Pokémon index to session state
+        'pokemon_index': 0,         # Add a Pokémon index to session state
+        'start_pokemon': '',        # Add a starting Pokémon name to session state
+        'start_pokemon_id': None    # Add a starting Pokémon ID to session state
     }
     for key, value in session_defaults.items():
         if key not in st.session_state:
@@ -247,14 +249,25 @@ def fetch_pokemon(pokemon_id):
     conn.close()
     return pokemon
 
+def fetch_pokemon_id_by_name(pokemon_name):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    c.execute('SELECT id FROM pokemon WHERE name = ?', (pokemon_name,))
+    pokemon_id = c.fetchone()
+    conn.close()
+    return pokemon_id[0] if pokemon_id else None
+
 def new_pokemon():
     st.session_state['show_answer_pressed'] = False
     listOfActiveGens = [gen_id_ranges[gen] for gen in range(1, 10) if st.session_state[f'gen{gen}']]
     if not listOfActiveGens:
         listOfActiveGens = [(1, 1025)]
     if st.session_state['non_random_mode']:
-        st.session_state['current_pokemon_id'] = st.session_state['pokemon_index'] + 1
-        st.session_state['pokemon_index'] += 1
+        if st.session_state['start_pokemon_id'] is not None:
+            st.session_state['current_pokemon_id'] = st.session_state['start_pokemon_id'] + st.session_state['pokemon_index']
+            st.session_state['pokemon_index'] += 1
+        else:
+            st.error("Please select a valid starting Pokémon.")
     else:
         randGen = normal_rng.choice(listOfActiveGens)
         random_id = normal_rng.randint(randGen[0], randGen[1])
@@ -539,9 +552,21 @@ with tab3:
     with right:
         st.subheader("Extra Options", anchor=False)
         guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
+
+        st.subheader("Modes", anchor=False)
+
         st.checkbox("Non-Random Mode", value=st.session_state['non_random_mode'], key='non_random_mode')  # Add this line
+        if st.session_state['non_random_mode']:
+            st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokemon:", listOfPokemonNames, index=0, key='start_pokemon_name')
+            if st.button("Set Start Pokémon"):
+                start_pokemon_id = fetch_pokemon_id_by_name(st.session_state['start_pokemon'])
+                if start_pokemon_id:
+                    st.session_state['start_pokemon_id'] = start_pokemon_id
+                    st.session_state['pokemon_index'] = 0
+                    st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
+                else:
+                    st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
         
-            
 
 if 'current_pokemon_id' in st.session_state:
     pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
@@ -580,6 +605,8 @@ with tab1:
             )
     else:
         st.write("You must be logged in to enable the daily challenge.")
+
+    
 
     if st.session_state['daily_challenge_active']:
         daily_pokemon_ids = st.session_state['daily_challenge']['guesses']
@@ -814,6 +841,8 @@ with tab1:
                         st.error("Incorrect. Try again.")
                 elif name_guess_disabled:
                     st.success("Correct!")
+
+    
 
 def reset():
     st.session_state.generation_selection = 'Choose One:'
