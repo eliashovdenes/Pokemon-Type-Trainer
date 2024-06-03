@@ -566,24 +566,42 @@ with tab3:
 
         st.subheader("Modes", anchor=False)
 
-        st.checkbox("Non-Random Mode", value=st.session_state['non_random_mode'], key='non_random_mode')  # Add this line
+        st.checkbox("Non-Random Mode", value=st.session_state['non_random_mode'], key='non_random_mode')
+        
         if st.session_state['non_random_mode']:
-            selected_generation = st.selectbox("Select a Generation:", [f'Gen {gen}' for gen in range(1, 10)], index=0, key='start_generation')
-            if selected_generation:
-                selected_gen = int(selected_generation.split()[1])
-                st.session_state['available_pokemons'] = fetch_pokemon_by_generation(selected_gen)
-                pokemon_options = [f"{name} (#{pokedex_id})" for pokedex_id, name in st.session_state['available_pokemons']]
-                st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
-                st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", pokemon_options, index=0, key='start_pokemon_name')
-                if st.button("Set Start Pokémon"):
-                    start_pokemon_index = pokemon_options.index(st.session_state['start_pokemon'])
-                    start_pokemon_id = st.session_state['available_pokemons'][start_pokemon_index][0]
-                    if start_pokemon_id:
-                        st.session_state['start_pokemon_id'] = start_pokemon_id
-                        st.session_state['pokemon_index'] = 0
-                        st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
-                    else:
-                        st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
+            # Set default generation if not selected
+            st.write("You have to set a Start pokemon to use this feature")
+            if 'start_generation' not in st.session_state or not st.session_state['start_generation']:
+                st.session_state['start_generation'] = 'Gen 1/Kanto'
+            
+            selected_generation = st.selectbox("Select a Generation:", [f'Gen {gen}/' + region for gen, region in zip(range(1, 10), ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"])], index=0, key='start_generation')
+            selected_gen = int(selected_generation.split('/')[0].split()[1])
+            st.session_state['available_pokemons'] = fetch_pokemon_by_generation(selected_gen)
+            
+            # Set default starting Pokémon if not selected
+            if 'start_pokemon' not in st.session_state or not st.session_state['start_pokemon']:
+                st.session_state['start_pokemon'] = st.session_state['available_pokemons'][0][1]
+
+            
+            
+            pokemon_options = [f"{name} (#{pokedex_id})" for pokedex_id, name in st.session_state['available_pokemons']]
+            st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
+            st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", pokemon_options, index=0, key='start_pokemon_name')
+            if st.button("Set Start Pokémon"):
+                start_pokemon_index = pokemon_options.index(st.session_state['start_pokemon'])
+                start_pokemon_id = st.session_state['available_pokemons'][start_pokemon_index][0]
+                if start_pokemon_id:
+                    st.session_state['start_pokemon_id'] = start_pokemon_id
+                    st.session_state['pokemon_index'] = 0
+                    st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
+                    new_pokemon()
+                    st.rerun()
+                else:
+                    st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
+
+            
+            
+
         
 
 if 'current_pokemon_id' in st.session_state:
@@ -612,6 +630,9 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 with tab1:
+
+    if st.session_state['non_random_mode']:
+        st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
     if st.session_state['logged_in']:
         if not daily_challenge_completed_today:
             daily_challenge_toggle = st.checkbox(
@@ -623,8 +644,6 @@ with tab1:
             )
     else:
         st.write("You must be logged in to enable the daily challenge.")
-
-    
 
     if st.session_state['daily_challenge_active']:
         daily_pokemon_ids = st.session_state['daily_challenge']['guesses']
@@ -721,7 +740,6 @@ with tab1:
                     one, two, three = st.columns([3, 2, 3])
                     with one:
                         st.subheader("Current Pokemon:", anchor=False)
-                        
                         st.image(image_url, width=300, caption=f"{pokemon_name}")
                         hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
                         st.markdown(hide_img_fs, unsafe_allow_html=True)
@@ -772,17 +790,13 @@ with tab1:
             new_pokemon()
             st.rerun()
 
-
-    
-
     if not st.session_state['daily_challenge_active']:
         one, two, three = st.columns([3, 2, 3])
         pokename = pokemon_name if not st.session_state['guess_name'] else ""
         with one:
-            st.caption(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
             st.subheader("Current Pokemon:", anchor=False)
             if st.session_state['non_random_mode']:
-                caption_text = f"{pokename} (#{st.session_state['current_pokemon_id']}) "
+                caption_text = f"{pokename} (#{st.session_state['current_pokemon_id']})"
             else:
                 caption_text = pokename
             
@@ -791,6 +805,20 @@ with tab1:
             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
             st.markdown(hide_img_fs, unsafe_allow_html=True)
         with two:
+            if st.session_state['non_random_mode']:
+                selected_gen_region = generation.split('/')  # Split the generation string into number and region
+                if len(selected_gen_region) == 2:
+                    selected_gen = ''.join(filter(str.isdigit, selected_gen_region[0]))  # Extract the generation number safely
+                    region_name = selected_gen_region[1]
+                    if selected_gen.isdigit():
+                        selected_gen = int(selected_gen)
+                        st.session_state['generation_selection'] = f'Gen {selected_gen}/{region_name}'
+                        st.session_state['generation_correct'] = True 
+                    else:
+                        st.error("Invalid generation format")
+                else:
+                    st.error("Invalid generation format")
+
             listOfActiveGensNum = [gen for gen in range(1, 10) if st.session_state[f'gen{gen}']]
             if len(listOfActiveGensNum) == 1:
                 checkGen = f'Gen {listOfActiveGensNum[0]}'
