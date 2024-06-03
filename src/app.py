@@ -57,6 +57,8 @@ def release_db_connection(conn):
 def toggle_guess_name():
     st.session_state['correct_guess_made'] = False
     st.session_state['name_guess_bool'] = False
+    if st.session_state["current_streak"]>0:
+                            st.toast("Streak lost! :fire: ")
 
 
 # Initialize daily challenge completion in cookies
@@ -584,12 +586,14 @@ with tab3:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = False
                 st.session_state["Enable all"] = False
+                
             else:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = True
                 st.session_state["Enable all"] = True
         for gen in range(1, 10):
             st.checkbox(f"Gen {gen}", key=f'gen{gen}')
+        
     with right:
         st.subheader("Extra Options", anchor=False)
         guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
@@ -686,11 +690,6 @@ with tab1:
                         
                         left, right, third= st.columns(3)
 
-
-                        
-
-                        
-                        
                         with left:
                             st.image(image_url, caption=pokemon_name, width=100)
                             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
@@ -906,6 +905,8 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
+                        if st.session_state["current_streak"]>0:
+                            st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
                 else:
@@ -937,6 +938,8 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
+                        if st.session_state["current_streak"]>0:
+                            st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
                 else:
