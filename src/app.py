@@ -246,7 +246,7 @@ if 'daily_challenge' in st.session_state and 'results' not in st.session_state['
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
-    c.execute('SELECT * FROM pokemon WHERE id = ?', (pokemon_id,))
+    c.execute('SELECT id, name, generation, primary_type, secondary_type, image_url FROM pokemon WHERE id = ?', (pokemon_id,))
     pokemon = c.fetchone()
     conn.close()
     return pokemon
@@ -256,8 +256,8 @@ def fetch_pokemon_by_generation(generation):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
     gen_range = gen_id_ranges[generation]
-    c.execute('SELECT name FROM pokemon WHERE id BETWEEN ? AND ?', gen_range)
-    pokemons = [name[0] for name in c.fetchall()]
+    c.execute('SELECT id, name FROM pokemon WHERE id BETWEEN ? AND ?', gen_range)
+    pokemons = [(row[0], row[1]) for row in c.fetchall()]
     conn.close()
     return pokemons
 
@@ -572,9 +572,12 @@ with tab3:
             if selected_generation:
                 selected_gen = int(selected_generation.split()[1])
                 st.session_state['available_pokemons'] = fetch_pokemon_by_generation(selected_gen)
-                st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", st.session_state['available_pokemons'], index=0, key='start_pokemon_name')
+                pokemon_options = [f"{name} (#{pokedex_id})" for pokedex_id, name in st.session_state['available_pokemons']]
+                st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
+                st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", pokemon_options, index=0, key='start_pokemon_name')
                 if st.button("Set Start Pokémon"):
-                    start_pokemon_id = fetch_pokemon_id_by_name(st.session_state['start_pokemon'])
+                    start_pokemon_index = pokemon_options.index(st.session_state['start_pokemon'])
+                    start_pokemon_id = st.session_state['available_pokemons'][start_pokemon_index][0]
                     if start_pokemon_id:
                         st.session_state['start_pokemon_id'] = start_pokemon_id
                         st.session_state['pokemon_index'] = 0
@@ -623,8 +626,6 @@ with tab1:
 
     
 
-    
-
     if st.session_state['daily_challenge_active']:
         daily_pokemon_ids = st.session_state['daily_challenge']['guesses']
         current_index = st.session_state['daily_challenge']['current_index']
@@ -640,7 +641,7 @@ with tab1:
                     image_url = pokemon[5]  # Assuming image_url is at index 5
 
                     with cols[i % 1]:
-                        left, right, third= st.columns(3)
+                        left, right, third = st.columns(3)
                         with left:
                             st.image(image_url, caption=pokemon_name, width=100)
                             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
@@ -657,7 +658,7 @@ with tab1:
                                 st.write("❌")
 
                         with right:
-                            if correct_secondary == "No secondary type" and  user_secondary == "No secondary type":
+                            if correct_secondary == "No secondary type" and user_secondary == "No secondary type":
                                 correcttyping = correct_primary
                                 usertyping = user_primary
                                 results_df = pd.DataFrame({
@@ -687,13 +688,13 @@ with tab1:
                                     "Correct Answer": [correct_gen, correcttyping],
                                     "Result": [
                                         "✅" if user_gen == correct_gen else "❌",
-                                        "✅" if usertyping == correcttyping  else "❌"
+                                        "✅" if usertyping == correcttyping else "❌"
                                     ]
                                 })
                             elif user_secondary != "No secondary type" and correct_secondary != "No secondary type":
                                 correcttyping = f"{correct_primary}/{correct_secondary}"
                                 usertyping = f"{user_primary}/{user_secondary}"
-                                userttypingmirror = f"{user_secondary}/{user_primary}" 
+                                userttypingmirror = f"{user_secondary}/{user_primary}"
                                 results_df = pd.DataFrame({
                                     "Your Guess": [user_gen, usertyping],
                                     "Correct Answer": [correct_gen, correcttyping],
@@ -720,7 +721,8 @@ with tab1:
                     one, two, three = st.columns([3, 2, 3])
                     with one:
                         st.subheader("Current Pokemon:", anchor=False)
-                        st.image(image_url, width=300, caption=pokemon_name)
+                        
+                        st.image(image_url, width=300, caption=f"{pokemon_name}")
                         hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
                         st.markdown(hide_img_fs, unsafe_allow_html=True)
                         st.write(f"{current_index + 1}/10")
@@ -770,12 +772,22 @@ with tab1:
             new_pokemon()
             st.rerun()
 
+
+    
+
     if not st.session_state['daily_challenge_active']:
         one, two, three = st.columns([3, 2, 3])
         pokename = pokemon_name if not st.session_state['guess_name'] else ""
         with one:
+            st.caption(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
             st.subheader("Current Pokemon:", anchor=False)
-            st.image(image_url, width=300, caption=pokename)
+            if st.session_state['non_random_mode']:
+                caption_text = f"{pokename} (#{st.session_state['current_pokemon_id']}) "
+            else:
+                caption_text = pokename
+            
+            st.image(image_url, width=300, caption=caption_text)
+            
             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
             st.markdown(hide_img_fs, unsafe_allow_html=True)
         with two:
@@ -805,7 +817,7 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
-                        if st.session_state["current_streak"]>0:
+                        if st.session_state["current_streak"] > 0:
                             st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
@@ -838,7 +850,7 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
-                        if st.session_state["current_streak"]>0:
+                        if st.session_state["current_streak"] > 0:
                             st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
@@ -859,8 +871,6 @@ with tab1:
                 elif name_guess_disabled:
                     st.success("Correct!")
 
-    
-
 def reset():
     st.session_state.generation_selection = 'Choose One:'
     st.session_state.typing_selection = 'Choose One:'
@@ -868,7 +878,7 @@ def reset():
     st.session_state.select_name = 'Write here/Choose One:'
 
 with tab1:
-    left, bin, right = st.columns([1,5,1])
+    left, bin, right = st.columns([1, 5, 1])
     with left:
         with st.container():
             if st.session_state["guess_name"] == True:
@@ -879,7 +889,7 @@ with tab1:
                             st.session_state["answer_button"] = True
                             st.session_state['current_streak'] -= 1
                             if st.session_state["increased_high"] == True:
-                                st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                                st.session_state['highest_streak'] = st.session_state['highest_streak'] - 1
                                 st.session_state["increased_high"] = False
                             if st.session_state['current_streak'] < 0:
                                 st.session_state['current_streak'] = 0
@@ -910,7 +920,7 @@ with tab1:
                             st.session_state["answer_button"] = True
                             st.session_state['current_streak'] -= 1
                             if st.session_state["increased_high"] == True:
-                                st.session_state['highest_streak'] = st.session_state['highest_streak']-1
+                                st.session_state['highest_streak'] = st.session_state['highest_streak'] - 1
                                 st.session_state["increased_high"] = False
                             if st.session_state['current_streak'] < 0:
                                 st.session_state['current_streak'] = 0
