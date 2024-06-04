@@ -14,13 +14,9 @@ from datetime import datetime
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../pictures/logo2.png", layout="wide")
 
-
-
-
 # Initialize separate random generators
 daily_rng = random.Random()
 normal_rng = random
-
 
 # Load environment variables from .env file (for local testing)
 load_dotenv()
@@ -33,7 +29,6 @@ cookies = EncryptedCookieManager(
     prefix='pokemon_prep',
     password=COOKIE_PASSWORD
 )
-
 
 if not cookies.ready():
     st.stop()
@@ -58,8 +53,7 @@ def toggle_guess_name():
     st.session_state['correct_guess_made'] = False
     st.session_state['name_guess_bool'] = False
     if st.session_state["current_streak"]>0:
-                            st.toast("Streak lost! :fire: ")
-
+        st.toast("Streak lost! :fire:")
 
 # Initialize daily challenge completion in cookies
 if 'daily_challenge_date' not in cookies:
@@ -79,7 +73,6 @@ if 'daily_challenge' not in st.session_state:
         'guesses': []
     }
 
-
 def fetch_pokemon_by_name(pokemon_name):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
@@ -88,14 +81,13 @@ def fetch_pokemon_by_name(pokemon_name):
     conn.close()
     return pokemon
 
-
 # Fetch today's date
 today_date = datetime.now().strftime('%Y-%m-%d')
 
 # Check if the user has already completed the daily challenge today
 daily_challenge_completed_today = cookies.get('daily_challenge_date') == today_date
 
-#saving the highest streak to database
+# Saving the highest streak to database
 def update_highest_streak(user_id, new_streak):
     conn = get_db_connection()
     try:
@@ -147,10 +139,6 @@ def save_daily_score(user_id, score_date, daily_score):
         print(f"Attempted to save a score for a different date: {score_date}. Current date is {current_date}.")
         print(f"000{type(score_date)}000")
         print(f"000{type(current_date)}000")
-        
-
-
-
 
 def wipe_daily_scores():
     conn = psycopg2.connect(DATABASE_URL)
@@ -162,9 +150,7 @@ def wipe_daily_scores():
         cur.close()
         conn.close()
 
-
 def display_streak():
-    # st.subheader("Current Streak", anchor=False)
     st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
     st.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
     if st.session_state['logged_in']:
@@ -172,12 +158,7 @@ def display_streak():
             current_user_id = st.session_state['user_id']
             update_highest_streak(current_user_id, st.session_state['highest_streak'])
 
-    
-
-
-
-
-# Funcion to set all the answers to the correct answers
+# Function to set all the answers to the correct answers
 def answer():
     st.session_state.generation_selection = generation
     st.session_state.typing_selection = primary_type
@@ -193,7 +174,6 @@ for gen in range(1, 10):
         st.session_state[f'gen{gen}'] = True
 
 listOfActiveGensNum = [gen for gen in range(1, 10) if st.session_state[f'gen{gen}']]
-
 
 gen_id_ranges = {
     1: (1, 151),
@@ -219,8 +199,6 @@ def load_pokemon_names():
 
 listOfPokemonNames = load_pokemon_names()
 
-
-
 def initialize_session_state():
     session_defaults = {
         'highest_streak': 0,
@@ -231,14 +209,18 @@ def initialize_session_state():
         'show_answer_pressed': False,
         'guess_name': False,
         'name_guess_bool': False,
+        'non_random_mode': False,  # Add non-random mode to session state
+        'pokemon_index': 0,         # Add a Pokémon index to session state
+        'start_generation': None,   # Add a starting generation to session state
+        'start_pokemon': '',        # Add a starting Pokémon name to session state
+        'start_pokemon_id': None,   # Add a starting Pokémon ID to session state
+        'available_pokemons': []    # Add available Pokémon list to session state
     }
     for key, value in session_defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
 initialize_session_state()
-
-
 
 def get_daily_pokemon():
     today = datetime.now().date()
@@ -264,19 +246,54 @@ if 'daily_challenge' in st.session_state and 'results' not in st.session_state['
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
-    c.execute('SELECT * FROM pokemon WHERE id = ?', (pokemon_id,))
+    c.execute('SELECT id, name, generation, primary_type, secondary_type, image_url FROM pokemon WHERE id = ?', (pokemon_id,))
     pokemon = c.fetchone()
     conn.close()
     return pokemon
+
+
+def fetch_pokemon_by_generation(generation):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    gen_range = gen_id_ranges[generation]
+    c.execute('SELECT id, name FROM pokemon WHERE id BETWEEN ? AND ?', gen_range)
+    pokemons = [(row[0], row[1]) for row in c.fetchall()]
+    conn.close()
+    return pokemons
+
+def fetch_pokemon_id_by_name(pokemon_name):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    c.execute('SELECT id FROM pokemon WHERE name = ?', (pokemon_name,))
+    pokemon_id = c.fetchone()
+    conn.close()
+    return pokemon_id[0] if pokemon_id else None
 
 def new_pokemon():
     st.session_state['show_answer_pressed'] = False
     listOfActiveGens = [gen_id_ranges[gen] for gen in range(1, 10) if st.session_state[f'gen{gen}']]
     if not listOfActiveGens:
         listOfActiveGens = [(1, 1025)]
-    randGen = normal_rng.choice(listOfActiveGens)
-    random_id = normal_rng.randint(randGen[0], randGen[1])
-    st.session_state['current_pokemon_id'] = random_id
+    if st.session_state['non_random_mode']:
+        if st.session_state['start_pokemon_id'] is not None:
+            st.session_state['current_pokemon_id'] = st.session_state['start_pokemon_id'] + st.session_state['pokemon_index']
+            
+            numbers = [num for num, _ in st.session_state['available_pokemons'] if isinstance(num, int)]
+            
+            
+            if st.session_state['current_pokemon_id'] not in numbers:
+                print("Id not in gen")
+                st.session_state['start_pokemon_id'] = st.session_state['available_pokemons'][0][0]
+                st.session_state['pokemon_index'] = 0
+                st.session_state['current_pokemon_id'] = st.session_state['start_pokemon_id'] + st.session_state['pokemon_index']
+
+            st.session_state['pokemon_index'] += 1
+        else:
+            st.error("Please select a valid starting Pokémon.")
+    else:
+        randGen = normal_rng.choice(listOfActiveGens)
+        random_id = normal_rng.randint(randGen[0], randGen[1])
+        st.session_state['current_pokemon_id'] = random_id
 
 if 'current_pokemon_id' not in st.session_state or not st.session_state.get('current_pokemon_id'):
     if st.session_state['daily_challenge_active']:
@@ -299,8 +316,7 @@ correct_answers = {
 }
 
 if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-
+    st.session_state['logged_in'] = False
 
 # Check if user is already logged in via cookies
 if cookies.get('username'):
@@ -325,16 +341,9 @@ if st.session_state['logged_in']:
 else:
     st.caption("Login to use all features")
 
-
-    
-    
-
 tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Account", "Options", "About"])
 
 with account:
-
-    
-
     def load_banned_words(file_path):
         with open(file_path, 'r') as file:
             banned_words = [line.strip().lower() for line in file.readlines()]
@@ -342,7 +351,6 @@ with account:
 
     if not st.session_state['logged_in']:
         banned_words = load_banned_words('./helper_files/bannedwords.txt')
-        
 
     def contains_banned_word(username):
         username_lower = username.lower()
@@ -382,10 +390,7 @@ with account:
             return None
         finally:
             release_db_connection(conn)
-    
 
-    
-    # Registration Form
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
@@ -396,7 +401,6 @@ with account:
             st.write("Not registered?")
 
         with st.expander("Sign up now"):
-
             if not st.session_state['logged_in']:
                 username = st.text_input("Username", key='register_username')
                 password = st.text_input("Password", type="password", key='register_password')
@@ -414,10 +418,7 @@ with account:
                         else:
                             st.error(message)
                         
-                    
-
     with left:
-        # Login Form
         if not st.session_state['logged_in']:
             st.write("Login")
             username = st.text_input("Username", key='login_username')
@@ -431,10 +432,7 @@ with account:
                     st.rerun()
                 else:
                     st.error("Invalid credentials")
-
         
-        
-        # Add a logout button
         if st.session_state['logged_in']:
             st.subheader("Account", anchor=False)
             st.write("User: ", cookies.get('username') )
@@ -447,18 +445,13 @@ with account:
                 st.success("Logged out successfully!")
                 st.rerun()
 
-
-
 with leaderboard:
-     
-     if not st.session_state['logged_in']:
+    if not st.session_state['logged_in']:
         st.write("To view and participate in the leaderboard, please log in to your account. Go to the account page to log in or sign up.")
 
-     if  st.session_state['logged_in']:
-
+    if st.session_state['logged_in']:
         left, right, bin = st.columns([2,2,5])
         with left:
-            # Fetch leaderboard data
             @st.cache_data(ttl=60)  # Cache for 60 seconds
             def fetch_leaderboard():
                 conn = get_db_connection()
@@ -479,11 +472,9 @@ with leaderboard:
                 finally:
                     release_db_connection(conn)
 
-            # Display the leaderboard
             st.subheader("Highest Streak", anchor=False)
             leaderboard_df = fetch_leaderboard()
 
-            # Customize the highest streak column with emojis
             leaderboard_df["Highest Streak"] = leaderboard_df.apply(
                 lambda row: f"{row['Highest Streak']} 🥇" if row['Rank'] == 1 else f"{row['Highest Streak']} 🔥", axis=1
             )
@@ -511,8 +502,6 @@ with leaderboard:
             )
 
         with right:
-
-            # Fetch daily leaderboard data
             @st.cache_data(ttl=60)  # Cache for 60 seconds
             def fetch_daily_leaderboard():
                 conn = get_db_connection()
@@ -534,11 +523,9 @@ with leaderboard:
                 finally:
                     release_db_connection(conn)
 
-            # Display the daily score leaderboard
             st.subheader("Daily Score", anchor=False)
             daily_leaderboard_df = fetch_daily_leaderboard()
 
-            # Customize the daily score column with emojis
             daily_leaderboard_df["Daily Score"] = daily_leaderboard_df.apply(
                 lambda row: f"{row['Daily Score']} 🥇" if row['Rank'] == 1 else f"{row['Daily Score']} 😎", axis=1
             )
@@ -565,16 +552,6 @@ with leaderboard:
                 hide_index=True,
             )
 
-            
-
-        
-
-
-
-
-
-    
-
 with tab3:
     left, right, third = st.columns([1, 1, 1])
     with left:
@@ -586,7 +563,6 @@ with tab3:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = False
                 st.session_state["Enable all"] = False
-                
             else:
                 for gen in range(1, 10):
                     st.session_state[f'gen{gen}'] = True
@@ -598,14 +574,48 @@ with tab3:
         st.subheader("Extra Options", anchor=False)
         guess_name_toggle = st.checkbox("Guess the name", value=st.session_state['guess_name'], key="guess_name", on_change=toggle_guess_name)
 
-    
-    
+        st.subheader("Modes", anchor=False)
 
+        st.checkbox("Non-Random Mode", value=st.session_state['non_random_mode'], key='non_random_mode')
+        
+        if st.session_state['non_random_mode']:
+            # Set default generation if not selected
+            st.write("You have to set a Start pokemon to use this feature")
+            if 'start_generation' not in st.session_state or not st.session_state['start_generation']:
+                st.session_state['start_generation'] = 'Gen 1/Kanto'
+            
+            selected_generation = st.selectbox("Select a Generation:", [f'Gen {gen}/' + region for gen, region in zip(range(1, 10), ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"])], index=0, key='start_generation')
+            selected_gen = int(selected_generation.split('/')[0].split()[1])
+            st.session_state['available_pokemons'] = fetch_pokemon_by_generation(selected_gen)
+            
+            # Set default starting Pokémon if not selected
+            if 'start_pokemon' not in st.session_state or not st.session_state['start_pokemon']:
+                st.session_state['start_pokemon'] = st.session_state['available_pokemons'][0][1]
 
-# Fetch and display the current Pokémon if new pokemon is ran
+            
+            
+            pokemon_options = [f"{name} (#{pokedex_id})" for pokedex_id, name in st.session_state['available_pokemons']]
+            st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
+            st.session_state['start_pokemon'] = st.selectbox("Select a starting Pokémon:", pokemon_options, index=0, key='start_pokemon_name')
+            if st.button("Set Start Pokémon"):
+                start_pokemon_index = pokemon_options.index(st.session_state['start_pokemon'])
+                start_pokemon_id = st.session_state['available_pokemons'][start_pokemon_index][0]
+                if start_pokemon_id:
+                    st.session_state['start_pokemon_id'] = start_pokemon_id
+                    st.session_state['pokemon_index'] = 0
+                    st.success(f"Starting Pokémon set to {st.session_state['start_pokemon']}")
+                    new_pokemon()
+                    st.rerun()
+                else:
+                    st.error("Failed to set the starting Pokémon. Please select a valid Pokémon.")
+
+            
+            
+
+        
+
 if 'current_pokemon_id' in st.session_state:
     pokemon = fetch_pokemon(st.session_state['current_pokemon_id'])
-
 
 # Hide various Streamlit stuff
 hide_github_icon = """
@@ -629,33 +639,11 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
-
-
-
-        
-
-# Maybe UI for later:
-# st.toast("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed.", icon="🔍")   
-# st.code("Pokemon Type Trainer", language="python")
-# st.download_button("Download the code", data="Pokemon Type Trainer", file_name="Pokemon_Type_Trainer.py", mime="text/python", key="download_button")
-# st.info("Select the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
-# st.help()
-# with st.popover("Hello"):
-#     st.caption("Welcome to the Pokemon Type Trainer! Guess the generation and typing of the Pokémon displayed. Click the 'Show Answers' button to get the answers. Click the 'Next Pokemon' button to get a new Pokémon. You can select the generations you want to guess from the sidebar. Good luck!")
-# st._bottom.caption("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
-# st.link_button("GitHub","https://github.com/eliashovdenes/Pokemon-Type-Trainer", type="primary")        
-# st.popover
-# st.radio st.info
-
-
-
-# Display the Pokémon image and the guessing options
-    
 with tab1:
-    
+
+    if st.session_state['non_random_mode']:
+        st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
     if st.session_state['logged_in']:
-        
-        
         if not daily_challenge_completed_today:
             daily_challenge_toggle = st.checkbox(
                 "Enable Daily Challenge",
@@ -667,36 +655,28 @@ with tab1:
     else:
         st.write("You must be logged in to enable the daily challenge.")
 
-
     if st.session_state['daily_challenge_active']:
         daily_pokemon_ids = st.session_state['daily_challenge']['guesses']
         current_index = st.session_state['daily_challenge']['current_index']
         if current_index <= len(daily_pokemon_ids):
             if current_index == len(daily_pokemon_ids):
-            
-                # Create columns for results
                 num_pokemon = len(st.session_state['daily_challenge']['results'])
                 cols = st.columns(1)
 
                 for i in range(num_pokemon):
                     result = st.session_state['daily_challenge']['results'][i]
                     pokemon_name, user_gen, correct_gen, user_primary, correct_primary, user_secondary, correct_secondary = result
-
-                    # Fetch the image URL for each Pokémon
                     pokemon = fetch_pokemon_by_name(pokemon_name)
                     image_url = pokemon[5]  # Assuming image_url is at index 5
 
                     with cols[i % 1]:
-                        
-                        left, right, third= st.columns(3)
-
+                        left, right, third = st.columns(3)
                         with left:
                             st.image(image_url, caption=pokemon_name, width=100)
                             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
                             st.markdown(hide_img_fs, unsafe_allow_html=True)
 
                         with right:
-                            # st.write("Result:")
                             all_correct = all([
                                 user_gen == correct_gen,
                                 user_primary == correct_primary and user_secondary == correct_secondary or user_primary == correct_secondary and user_secondary == correct_primary
@@ -707,104 +687,73 @@ with tab1:
                                 st.write("❌")
 
                         with right:
-
-                            if correct_secondary == "No secondary type" and  user_secondary == "No secondary type":
-                                    correcttyping = correct_primary
-                                    usertyping = user_primary
-                                    # Create a DataFrame for the results of this Pokémon
-                                    results_df = pd.DataFrame({
-                                        "Your Guess": [user_gen, usertyping],
-                                        "Correct Answer": [correct_gen, correcttyping],
-                                        "Result": [
-                                            "✅" if user_gen == correct_gen else "❌",
-                                            "✅" if usertyping == correcttyping else "❌"
-                                            
-                                        ]
-                                    })
-
-                            elif user_secondary == "No secondary type" and correct_secondary != "No secondary type":
-                                    correcttyping = f"{correct_primary}/{correct_secondary}"
-                                    usertyping = user_primary
-                                    # Create a DataFrame for the results of this Pokémon
-                                    results_df = pd.DataFrame({
-                                        "Your Guess": [user_gen, usertyping],
-                                        "Correct Answer": [correct_gen, correcttyping],
-                                        "Result": [
-                                            "✅" if user_gen == correct_gen else "❌",
-                                            "✅" if usertyping == correcttyping else "❌"
-                                            
-                                        ]
-                                    })
-                            elif user_secondary != "No secondary type" and correct_secondary == "No secondary type":
+                            if correct_secondary == "No secondary type" and user_secondary == "No secondary type":
                                 correcttyping = correct_primary
-                                usertyping = f"{user_primary}/{user_secondary}"
-            
-
-
-                                # Create a DataFrame for the results of this Pokémon
+                                usertyping = user_primary
                                 results_df = pd.DataFrame({
                                     "Your Guess": [user_gen, usertyping],
                                     "Correct Answer": [correct_gen, correcttyping],
                                     "Result": [
                                         "✅" if user_gen == correct_gen else "❌",
-                                        "✅" if usertyping == correcttyping  else "❌"
-                                        
+                                        "✅" if usertyping == correcttyping else "❌"
                                     ]
                                 })
-
+                            elif user_secondary == "No secondary type" and correct_secondary != "No secondary type":
+                                correcttyping = f"{correct_primary}/{correct_secondary}"
+                                usertyping = user_primary
+                                results_df = pd.DataFrame({
+                                    "Your Guess": [user_gen, usertyping],
+                                    "Correct Answer": [correct_gen, correcttyping],
+                                    "Result": [
+                                        "✅" if user_gen == correct_gen else "❌",
+                                        "✅" if usertyping == correcttyping else "❌"
+                                    ]
+                                })
+                            elif user_secondary != "No secondary type" and correct_secondary == "No secondary type":
+                                correcttyping = correct_primary
+                                usertyping = f"{user_primary}/{user_secondary}"
+                                results_df = pd.DataFrame({
+                                    "Your Guess": [user_gen, usertyping],
+                                    "Correct Answer": [correct_gen, correcttyping],
+                                    "Result": [
+                                        "✅" if user_gen == correct_gen else "❌",
+                                        "✅" if usertyping == correcttyping else "❌"
+                                    ]
+                                })
                             elif user_secondary != "No secondary type" and correct_secondary != "No secondary type":
                                 correcttyping = f"{correct_primary}/{correct_secondary}"
                                 usertyping = f"{user_primary}/{user_secondary}"
-                                userttypingmirror = f"{user_secondary}/{user_primary}" 
-                                
-
-
-                                # Create a DataFrame for the results of this Pokémon
+                                userttypingmirror = f"{user_secondary}/{user_primary}"
                                 results_df = pd.DataFrame({
                                     "Your Guess": [user_gen, usertyping],
                                     "Correct Answer": [correct_gen, correcttyping],
                                     "Result": [
                                         "✅" if user_gen == correct_gen else "❌",
                                         "✅" if usertyping == correcttyping or userttypingmirror == correcttyping else "❌"
-                                        
                                     ]
                                 })
-                            # with st.expander("Details: "):
                             st.dataframe(results_df, hide_index=True, use_container_width=True)
 
                         st.divider()
 
-                        
-
-                        
-                            
-
                 st.write(f"Score: {st.session_state['daily_challenge']['score']}/10")
-
-                
-
-            
                 save_daily_score(st.session_state['user_id'], today_date, st.session_state['daily_challenge']['score'])
-
 
                 if st.button("Continue"):
                     st.session_state['daily_challenge']['current_index'] += 1
                     st.rerun()
-
             else:
                 pokemon_id = daily_pokemon_ids[current_index]
                 pokemon = fetch_pokemon(pokemon_id)
                 if pokemon:
                     pokemon_name, generation, primary_type, secondary_type, image_url = pokemon[1:6]
-
                     one, two, three = st.columns([3, 2, 3])
                     with one:
                         st.subheader("Current Pokemon:", anchor=False)
-                        st.image(image_url, width=300, caption=pokemon_name)
+                        st.image(image_url, width=300, caption=f"{pokemon_name}")
                         hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
                         st.markdown(hide_img_fs, unsafe_allow_html=True)
                         st.write(f"{current_index + 1}/10")
-
                     with two:
                         selected_generation = st.selectbox(
                             "Select the generation:", 
@@ -812,10 +761,8 @@ with tab1:
                             index=0, 
                             key='daily_guess_generation'
                         )
-
                     with three:
                         left, right = st.columns(2)
-
                         with left:
                             selected_typing = st.selectbox(
                                 "Select the primary typing:", 
@@ -836,9 +783,6 @@ with tab1:
                         if correct:
                             st.session_state['daily_challenge']['score'] += 1
                             
-                            
-                        
-                        # Store the result of this guess
                         st.session_state['daily_challenge']['results'].append([
                             pokemon_name, selected_generation, generation, selected_typing, primary_type, selected_typing2, secondary_type
                         ])
@@ -848,37 +792,43 @@ with tab1:
                             st.session_state['current_pokemon_id'] = daily_pokemon_ids[st.session_state['daily_challenge']['current_index']]
                         st.rerun()
         else:
-
-            
-            # Update cookies with the completed daily challenge score and date
             cookies['daily_challenge_date'] = today_date
             cookies['daily_challenge_score'] = str(st.session_state['daily_challenge']['score'])
             cookies.save()
-
-         
             st.session_state['daily_challenge']['completed'] = True
             st.session_state['daily_challenge_active'] = False
             new_pokemon()
             st.rerun()
 
-
-            
-
-                    
-
-                
-
-    # If not in daily challenge mode, use the existing logic
     if not st.session_state['daily_challenge_active']:
-        # Your existing logic for non-daily challenge mode
         one, two, three = st.columns([3, 2, 3])
         pokename = pokemon_name if not st.session_state['guess_name'] else ""
         with one:
             st.subheader("Current Pokemon:", anchor=False)
-            st.image(image_url, width=300, caption=pokename)
+            if st.session_state['non_random_mode']:
+                caption_text = f"{pokename} (#{st.session_state['current_pokemon_id']})"
+            else:
+                caption_text = pokename
+            
+            st.image(image_url, width=300, caption=caption_text)
+            
             hide_img_fs = '<style>button[title="View fullscreen"]{visibility: hidden;}</style>'
             st.markdown(hide_img_fs, unsafe_allow_html=True)
         with two:
+            if st.session_state['non_random_mode']:
+                selected_gen_region = generation.split('/')  # Split the generation string into number and region
+                if len(selected_gen_region) == 2:
+                    selected_gen = ''.join(filter(str.isdigit, selected_gen_region[0]))  # Extract the generation number safely
+                    region_name = selected_gen_region[1]
+                    if selected_gen.isdigit():
+                        selected_gen = int(selected_gen)
+                        st.session_state['generation_selection'] = f'Gen {selected_gen}/{region_name}'
+                        st.session_state['generation_correct'] = True 
+                    else:
+                        st.error("Invalid generation format")
+                else:
+                    st.error("Invalid generation format")
+
             listOfActiveGensNum = [gen for gen in range(1, 10) if st.session_state[f'gen{gen}']]
             if len(listOfActiveGensNum) == 1:
                 checkGen = f'Gen {listOfActiveGensNum[0]}'
@@ -905,7 +855,7 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
-                        if st.session_state["current_streak"]>0:
+                        if st.session_state["current_streak"] > 0:
                             st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
@@ -938,7 +888,7 @@ with tab1:
                         st.rerun()
                     else:
                         st.error("Incorrect. Try again.")
-                        if st.session_state["current_streak"]>0:
+                        if st.session_state["current_streak"] > 0:
                             st.toast("Streak lost! :fire: ")
                         st.session_state["current_streak"] = 0
                         st.session_state['correct_guess_made'] = False
@@ -966,108 +916,61 @@ def reset():
     st.session_state.select_name = 'Write here/Choose One:'
 
 with tab1:
-
-
-    left, bin, right = st.columns([1,5,1])
+    left, bin, right = st.columns([1, 5, 1])
     with left:
         with st.container():
-                
-                if st.session_state["guess_name"] == True:
-
-                    if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
-                        # print("I am here in the name guess true")
-                        # If the user guessed correct on the first try, increase the streak
-                        
-                             
-                        
-                        st.session_state["answer_button"] = False
-
-                        # If the user clicks the button, get a new Pokémon and reset the dropdowns
-                        if not st.session_state["daily_challenge_active"]:
-                            if st.button("Next Pokemon", on_click=reset):
-                                st.session_state["answer_button"] = True
-                                st.session_state['current_streak'] -= 1
-
-                                if st.session_state["increased_high"] == True:
-                                    st.session_state['highest_streak'] = st.session_state['highest_streak']-1
-                                    st.session_state["increased_high"] = False
-                                                            
-                                
-                                if st.session_state['current_streak'] < 0:
-                                    st.session_state['current_streak'] = 0
-
-                                new_pokemon()
-                                # Clear previous answers correctness
-                                st.session_state['generation_correct'] = False
-                                st.session_state['typing_correct'] = False
-                                st.session_state['correct_guess_made'] = True
-                                st.session_state['name_guess_bool'] = False
-                                
-                                st.rerun()  # This reruns the script to reflect the new state
-                else:
-                    if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-
-                        # print("I am here in the name guess not active")
-                        
-                        # If the user guessed correct on the first try, increase the streak
-                        # st.session_state['name_guess_bool'] = False
-                        if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True:
-                            st.session_state['current_streak'] += 1
-                            st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
-                            # If the current streak is higher than the highest streak, update the highest streak
-                            if st.session_state['current_streak'] > st.session_state['highest_streak']:
-                                st.session_state['highest_streak'] = st.session_state['current_streak']
-                                st.session_state['increased_high'] = True
-                                
-
-
-                        
-
-
-                            
-                        else:
-                            # If the user guessed wrong, reset the streak and say that streak is lost
-                            if st.session_state['prev_streak'] > 0:
-                                st.toast("Streak lost! :fire: ")                   
-
-                            elif st.session_state['current_streak'] > 0:
-                                st.toast("Streak lost! :fire:")
-                                # st.toast("You have disabled a generation!")
-
-                            st.session_state['current_streak'] = 0
-                            st.session_state['prev_streak'] = 0            
-                        
-                        st.session_state["answer_button"] = False
-
-                        # If the user clicks the button, get a new Pokémon and reset the dropdowns
-                        if not st.session_state["daily_challenge_active"]:
-                            if st.button("Next Pokemon", on_click=reset):
-                                st.session_state["answer_button"] = True
-                                st.session_state['current_streak'] -= 1
-
-                                if st.session_state["increased_high"] == True:
-                                    st.session_state['highest_streak'] = st.session_state['highest_streak']-1
-                                    st.session_state["increased_high"] = False
-
-            
-                                    
-                                
-                                if st.session_state['current_streak'] < 0:
-                                    st.session_state['current_streak'] = 0
-
-                                new_pokemon()
-                                # Clear previous answers correctness
-                                st.session_state['generation_correct'] = False
-                                st.session_state['typing_correct'] = False
-                                st.session_state['correct_guess_made'] = True
-                                st.session_state['name_guess_bool'] = False
-                                
-                                st.rerun()  # This reruns the script to reflect the new state
-            
-    
+            if st.session_state["guess_name"] == True:
+                if st.session_state.get('generation_correct') and st.session_state.get('typing_correct') and st.session_state.get('name_guess_bool'):
+                    st.session_state["answer_button"] = False
+                    if not st.session_state["daily_challenge_active"]:
+                        if st.button("Next Pokemon", on_click=reset):
+                            st.session_state["answer_button"] = True
+                            st.session_state['current_streak'] -= 1
+                            if st.session_state["increased_high"] == True:
+                                st.session_state['highest_streak'] = st.session_state['highest_streak'] - 1
+                                st.session_state["increased_high"] = False
+                            if st.session_state['current_streak'] < 0:
+                                st.session_state['current_streak'] = 0
+                            new_pokemon()
+                            st.session_state['generation_correct'] = False
+                            st.session_state['typing_correct'] = False
+                            st.session_state['correct_guess_made'] = True
+                            st.session_state['name_guess_bool'] = False
+                            st.rerun()
+            else:
+                if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
+                    if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True and not st.session_state['non_random_mode']:
+                        st.session_state['current_streak'] += 1
+                        st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
+                        if st.session_state['current_streak'] > st.session_state['highest_streak']:
+                            st.session_state['highest_streak'] = st.session_state['current_streak']
+                            st.session_state['increased_high'] = True
+                    else:
+                        if st.session_state['prev_streak'] > 0:
+                            st.toast("Streak lost! :fire: ")                   
+                        elif st.session_state['current_streak'] > 0:
+                            st.toast("Streak lost! :fire:")
+                        st.session_state['current_streak'] = 0
+                        st.session_state['prev_streak'] = 0            
+                    st.session_state["answer_button"] = False
+                    if not st.session_state["daily_challenge_active"]:
+                        if st.button("Next Pokemon", on_click=reset):
+                            st.session_state["answer_button"] = True
+                            st.session_state['current_streak'] -= 1
+                            if st.session_state["increased_high"] == True:
+                                st.session_state['highest_streak'] = st.session_state['highest_streak'] - 1
+                                st.session_state["increased_high"] = False
+                            if st.session_state['current_streak'] < 0:
+                                st.session_state['current_streak'] = 0
+                            new_pokemon()
+                    
+                            st.session_state['generation_correct'] = False
+                            st.session_state['typing_correct'] = False
+                            st.session_state['correct_guess_made'] = True
+                            st.session_state['name_guess_bool'] = False
+                            st.rerun()
     
     with right:
-        # Display the answers
         with st.container():
             if st.session_state.get("answer_button", True):
                 if not st.session_state["daily_challenge_active"]:
@@ -1087,56 +990,32 @@ with tab1:
 
 with tab2:
     display_streak()
-
     if not st.session_state["daily_challenge_active"]:
         if len(listOfActiveGensNum) != 9:
             st.markdown(" Enable all generations to gain streak :exclamation:")
-
         if st.session_state["guess_name"]:
             st.markdown(" Disable name guessing to gain streak :exclamation:")
 
+        if st.session_state["non_random_mode"]:
+            st.markdown("Disable non-random mode to gain streak :exclamation:")
 
-
-    
 with tab4:
     left, center, right = st.columns([1, 1, 1])
     with left:
         with st.expander(f"**What is this?**"):
-           
             st.write(f"**Welcome to the Pokemon Type Trainer!**")
-            
             st.markdown("Guess the generation and typing of the random Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon.")
             st.write("")
-            
-
             st.write(f"**Generation Selection**")
-            
             st.markdown("You can select and deselect generations in Options. The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
             st.write("")
-            
-           
-
             st.write(f"**Streak**")
-            
             st.markdown("If you guess correct on the first try you will get a streak 🔥. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you change your options.")
             st.write("")
-            
-
             st.write(f"**Extra Options**")
-
             st.markdown("You can also enable name guessing!")
             st.write("")
-            
-
-
-
         with st.expander(f"**Inspiration**"):
             st.markdown("I made this site to train for sites such as [pokedoku.com](https://pokedoku.com). \n \n On pokedoku it is crucial to know the typing and generation of pokemon. That is why I wanted to make a site where you could guess the generation, typing and name of a pokemon. \n \n  Try it out :point_right: [pokedoku.com](https://pokedoku.com)")
         with st.expander(f"**Credits**"):
             st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
-
-
-
-
-
-
