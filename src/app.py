@@ -736,6 +736,7 @@ with tab1:
                         st.divider()
 
                 st.write(f"Score: {st.session_state['daily_challenge']['score']}/10")
+                st.session_state['daily_challenge_active'] = True
                 if not daily_challenge_completed_today:
                     save_daily_score(st.session_state['user_id'], today_date, st.session_state['daily_challenge']['score'])
                 if st.button("Continue"):
