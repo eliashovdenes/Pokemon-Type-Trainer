@@ -154,7 +154,6 @@ def display_streak():
     st.write(f"🔥 Your current streak: {st.session_state['current_streak']}")
     st.write(f"🔥 Your highest streak: {st.session_state['highest_streak']}")
     if st.session_state['logged_in']:
-        if st.session_state['logged_in']:
             current_user_id = st.session_state['user_id']
             update_highest_streak(current_user_id, st.session_state['highest_streak'])
 
@@ -644,7 +643,7 @@ with tab1:
     if st.session_state['non_random_mode']:
         st.write(f"Generation {selected_gen} starts at #{gen_id_ranges[selected_gen][0]} and ends at #{gen_id_ranges[selected_gen][1]}")
     if st.session_state['logged_in']:
-        if not daily_challenge_completed_today:
+        
             daily_challenge_toggle = st.checkbox(
                 "Enable Daily Challenge",
                 value=st.session_state['daily_challenge_active'],
@@ -737,8 +736,8 @@ with tab1:
                         st.divider()
 
                 st.write(f"Score: {st.session_state['daily_challenge']['score']}/10")
-                save_daily_score(st.session_state['user_id'], today_date, st.session_state['daily_challenge']['score'])
-
+                if not daily_challenge_completed_today:
+                    save_daily_score(st.session_state['user_id'], today_date, st.session_state['daily_challenge']['score'])
                 if st.button("Continue"):
                     st.session_state['daily_challenge']['current_index'] += 1
                     st.rerun()
