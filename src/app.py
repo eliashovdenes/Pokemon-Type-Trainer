@@ -7,7 +7,6 @@ import os
 import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
-from psycopg2 import pool
 from streamlit_cookies_manager import EncryptedCookieManager
 from datetime import datetime
 
@@ -73,6 +72,7 @@ if 'daily_challenge' not in st.session_state:
         'guesses': []
     }
 
+@st.cache_data
 def fetch_pokemon_by_name(pokemon_name):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
@@ -242,6 +242,7 @@ if 'daily_challenge' in st.session_state and 'results' not in st.session_state['
     st.session_state['daily_challenge']['results'] = []
 
 # Function to fetch a Pokémon from the database
+@st.cache_data
 def fetch_pokemon(pokemon_id):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
@@ -250,7 +251,7 @@ def fetch_pokemon(pokemon_id):
     conn.close()
     return pokemon
 
-
+@st.cache_data
 def fetch_pokemon_by_generation(generation):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
