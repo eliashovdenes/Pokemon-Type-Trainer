@@ -334,10 +334,12 @@ if cookies.get('username'):
 if st.session_state['logged_in']:
     try:
         daily_score = int(cookies.get('daily_challenge_score', '0'))
+        print("Could get daily score from cookies")
     except ValueError:
         daily_score = 0
+        print("Could not get daily score from cookies")
 
-    st.caption(f"****Logged in as {cookies.get('username')} - Daily Score: {daily_score}/10****")
+    st.caption(f"****Logged in as {cookies.get('username')}****")
 else:
     st.caption("Login to use all features")
 
@@ -782,8 +784,11 @@ with tab1:
                             )
 
                     if st.button(f"Submit guess for {pokemon_name}"):
-                        correct = (selected_generation == generation and (selected_typing == primary_type and selected_typing2 == secondary_type) or (selected_typing == secondary_type and selected_typing2 == primary_type))
-                        if correct:
+                        all_correct = all([
+                            selected_generation == generation,
+                            (selected_typing == primary_type and selected_typing2 == secondary_type) or (selected_typing == secondary_type and selected_typing2 == primary_type)
+                        ])
+                        if all_correct:
                             st.session_state['daily_challenge']['score'] += 1
                             
                         st.session_state['daily_challenge']['results'].append([
