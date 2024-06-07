@@ -9,6 +9,7 @@ from psycopg2 import pool
 from dotenv import load_dotenv
 from streamlit_cookies_manager import EncryptedCookieManager
 from datetime import datetime
+import subprocess
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../pictures/logo2.png", layout="wide")
@@ -130,6 +131,8 @@ def save_daily_score(user_id, score_date, daily_score):
                     VALUES (%s, %s, %s);
                 """, (user_id, score_date, daily_score))
                 conn.commit()
+                # Run the discord bot script
+                subprocess.Popen(["python", "discord_bot.py"])
             else:
                 print(f"Score for user_id {user_id} on {score_date} already exists.")
         finally:
@@ -137,8 +140,7 @@ def save_daily_score(user_id, score_date, daily_score):
             conn.close()
     else:
         print(f"Attempted to save a score for a different date: {score_date}. Current date is {current_date}.")
-        print(f"000{type(score_date)}000")
-        print(f"000{type(current_date)}000")
+        
 
 def wipe_daily_scores():
     conn = psycopg2.connect(DATABASE_URL)
