@@ -7,17 +7,35 @@ import pandas as pd
 
 load_dotenv()
 
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-DISCORD_CHANNEL_ID = int(os.getenv('DISCORD_CHANNEL_ID'))
+DISCORD_TOKEN_DAILY = os.getenv('DISCORD_TOKEN_DAILY')
+DISCORD_CHANNEL_ID_DAILY = int(os.getenv('DISCORD_CHANNEL_ID_DAILY'))
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-client = discord.Client(intents=discord.Intents.default())
+intents = discord.Intents.default()
+intents.messages = True  # Ensure the bot can read message history
+client = discord.Client(intents=intents)
+
+async def delete_previous_messages(channel):
+    async for message in channel.history(limit=100):
+        if message.author == client.user:
+            await message.delete()
 
 @tasks.loop(hours=24)
 async def send_daily_leaderboard():
     conn = psycopg2.connect(DATABASE_URL)
     try:
         cur = conn.cursor()
+
+        # Check if there is any user who did the daily challenge today
+        cur.execute('''
+            SELECT EXISTS (
+                SELECT 1
+                FROM user_daily_scores
+                WHERE score_date = CURRENT_DATE
+            )
+        ''')
+        user_did_challenge = cur.fetchone()[0]
+
         cur.execute('''
             SELECT u.username, ds.daily_score
             FROM user_daily_scores ds
@@ -30,25 +48,26 @@ async def send_daily_leaderboard():
         leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Daily Score"])
         leaderboard_df["Rank"] = leaderboard_df.index + 1
 
-        message = "🎉 **Daily Leaderboard** 🎉\n\n"
+        message = "**Daily Leaderboard!** \n\n"
+        if user_did_challenge:
+            message += "**Another user has done the challenge:** \n\n"
 
         for index, row in leaderboard_df.iterrows():
             rank_emoji = "🥇" if row['Rank'] == 1 else "🥈" if row['Rank'] == 2 else "🥉" if row['Rank'] == 3 else f"{row['Rank']}️⃣"
-            message += f"{rank_emoji} **Rank {row['Rank']}**\n"
-            message += f"👤 **Username:** {row['Username']}\n"
-            message += f"🏆 **Score:** {row['Daily Score']} 🏅\n"
-            message += f"───────────── \n\n\n"
+            message += f"{rank_emoji} {row['Username']} {row['Daily Score']}\n"
+            message += "==================================================\n"
 
-        channel = client.get_channel(DISCORD_CHANNEL_ID)
+        channel = client.get_channel(DISCORD_CHANNEL_ID_DAILY)
+        await delete_previous_messages(channel)
         await channel.send(message)
     finally:
         cur.close()
         conn.close()
-        await client.close()  # Disconnect the bot after sending the message
+        await client.close()
 
 @client.event
 async def on_ready():
-    send_daily_leaderboard.start()
     print(f'Bot connected as {client.user}')
+    send_daily_leaderboard.start()
 
-client.run(DISCORD_TOKEN)
+client.run(DISCORD_TOKEN_DAILY)
