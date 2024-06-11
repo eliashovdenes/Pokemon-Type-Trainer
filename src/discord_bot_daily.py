@@ -55,7 +55,7 @@ async def send_daily_leaderboard():
         for index, row in leaderboard_df.iterrows():
             rank_emoji = "🥇" if row['Rank'] == 1 else "🥈" if row['Rank'] == 2 else "🥉" if row['Rank'] == 3 else f"{row['Rank']}️:"
             message += f"{rank_emoji} {row['Username']} {row['Daily Score']}/30\n"
-            message += "==================================================\n"
+            message += "=============================================\n"
 
         channel = client.get_channel(DISCORD_CHANNEL_ID_DAILY)
         await delete_previous_messages(channel)
