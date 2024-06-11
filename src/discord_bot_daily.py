@@ -50,10 +50,10 @@ async def send_daily_leaderboard():
 
         message = "**Daily Leaderboard!** \n\n"
         if user_did_challenge:
-            message += "**Another user has done the challenge:** \n\n"
+            message += "**A user has done the daily challenge:** \n\n"
 
         for index, row in leaderboard_df.iterrows():
-            rank_emoji = "🥇" if row['Rank'] == 1 else "🥈" if row['Rank'] == 2 else "🥉" if row['Rank'] == 3 else f"{row['Rank']}️⃣"
+            rank_emoji = "🥇" if row['Rank'] == 1 else "🥈" if row['Rank'] == 2 else "🥉" if row['Rank'] == 3 else f"{row['Rank']}️"
             message += f"{rank_emoji} {row['Username']} {row['Daily Score']}\n"
             message += "==================================================\n"
 
