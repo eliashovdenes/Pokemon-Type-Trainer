@@ -99,9 +99,6 @@ def update_highest_streak(user_id, new_streak):
             highest_streak = result[0]
             if new_streak > highest_streak:
                 c.execute('UPDATE user_scores SET highest_streak = %s WHERE user_id = %s', (new_streak, user_id))
-                print("\n \n \n")
-                print("running streak bot")
-                print("\n \n \n")
                 subprocess.Popen(["python", "discord_bot_streak.py"])
         else:
             c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (%s, %s)', (user_id, new_streak))
@@ -137,6 +134,9 @@ def save_daily_score(user_id, score_date, daily_score):
                 conn.commit()
                 # Run the discord bot script
                 subprocess.Popen(["python", "discord_bot_daily.py"])
+                print("\n \n \n")
+                print("running daily bot")
+                print("\n \n \n")
             else:
                 print(f"Score for user_id {user_id} on {score_date} already exists.")
         finally:
