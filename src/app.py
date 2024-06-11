@@ -99,6 +99,9 @@ def update_highest_streak(user_id, new_streak):
             highest_streak = result[0]
             if new_streak > highest_streak:
                 c.execute('UPDATE user_scores SET highest_streak = %s WHERE user_id = %s', (new_streak, user_id))
+                print("\n \n \n")
+                print("running streak bot")
+                print("\n \n \n")
                 subprocess.Popen(["python", "discord_bot_streak.py"])
         else:
             c.execute('INSERT INTO user_scores (user_id, highest_streak) VALUES (%s, %s)', (user_id, new_streak))
