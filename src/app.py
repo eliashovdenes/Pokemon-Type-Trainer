@@ -349,7 +349,7 @@ if st.session_state['logged_in']:
 else:
     st.caption("Login to use all features")
 
-tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["Pokemon Type Trainer", "Streak", "Leaderboard", "Account", "Options", "About"])
+tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["Poke Typer", "Streak", "Leaderboard", "Account", "Options", "About"])
 
 with account:
     def load_banned_words(file_path):
