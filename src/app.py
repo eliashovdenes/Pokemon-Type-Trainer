@@ -349,7 +349,7 @@ if st.session_state['logged_in']:
 else:
     st.caption("Login to use all features")
 
-tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["Poke Typer", "Streak", "Leaderboard", "Account", "Options", "About"])
+tab1, tab2, leaderboard, account, tab3, tab4 = st.tabs(["PokeTyper", "Streak", "Leaderboard", "Account", "Options", "About"])
 
 with account:
     def load_banned_words(file_path):
@@ -1031,19 +1031,31 @@ with tab4:
     left, center, right = st.columns([1, 1, 1])
     with left:
         with st.expander(f"**What is this?**"):
-            st.write(f"**Welcome to the Pokemon Type Trainer!**")
-            st.markdown("Guess the generation and typing of the random Pokémon displayed. Click the 'Show Answers' button to get the answers. When answers are correct you can click the 'Next Pokemon' button to get a new Pokémon.")
+            st.write(f"**Welcome to the PokeTyper!**")
+            st.markdown("Select the generation and type (both primary and secondary) from the dropdown menus. Click on 'Check Generation' and 'Check Typing' to see if your guesses are correct. If you have enabled 'Guess the name' mode, you can also try to guess the name of the Pokémon.")
             st.write("")
-            st.write(f"**Generation Selection**")
-            st.markdown("You can select and deselect generations in Options. The generation selection will be applied when clicking the 'Next Pokemon' button. If no generation is selected, the generation will be chosen randomly from all generations.")
+            st.write(f"**Daily Challenge**")
+            st.markdown("Log in to participate in the daily challenge. Each day, you get a set of 10 Pokémon to guess. Your scores for the daily challenge are saved and can be viewed on the leaderboard. Once you've completed the challenge, your score will be saved for that day.")
             st.write("")
-            st.write(f"**Streak**")
-            st.markdown("If you guess correct on the first try you will get a streak 🔥. The streak only applies when guessing on all the generations, it will reset if you guess wrong, click the 'Show me the answers' button or you change your options.")
+            st.write(f"**Streaks**")
+            st.markdown("You can build a streak by continuously guessing correctly on the first try. Your current streak and highest streak are displayed in the 'Streak' tab.")
             st.write("")
-            st.write(f"**Extra Options**")
-            st.markdown("You can also enable name guessing!")
+            st.write(f"**Leaderboards**")
+            st.markdown("The 'Leaderboard' tab shows the highest streaks and daily scores of all users. Compete with others to see who knows the most about Pokémon!!")
+            st.write("")
+
+            st.write(f"**Account management**")
+            st.markdown("In the 'Account' tab you can create an account, log in, and save your progress.")
+            st.write("")
+
+            st.write(f"**Non-Random Mode**")
+            st.markdown("In the 'Options' tab, you can enable 'Non-Random Mode' to start with a specific Pokémon and proceed sequentially. Select the starting generation and the specific Pokémon to start from. This mode is helpful for structured learning through the Pokédex.")
+            st.write("")
+
+            st.write(f"**Options Customization**")
+            st.markdown("In the 'Options' tab, enable or disable specific generations, toggle the non-random mode and toggle the guess the name option.")
             st.write("")
         with st.expander(f"**Inspiration**"):
-            st.markdown("I made this site to train for sites such as [pokedoku.com](https://pokedoku.com). \n \n On pokedoku it is crucial to know the typing and generation of pokemon. That is why I wanted to make a site where you could guess the generation, typing and name of a pokemon. \n \n  Try it out :point_right: [pokedoku.com](https://pokedoku.com)")
+            st.markdown("I made this site to train for sites such as Pokedoku. On Pokedoku, it is crucial to know the typing and generation of Pokémon. That is why I wanted to make a site where you could guess the generation, typing, and name of a Pokémon. Try it out: [Pokedoku](https://pokedoku.com)")
         with st.expander(f"**Credits**"):
-            st.markdown(":point_right: Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
+            st.markdown("Made by [Elias Hovdenes](https://github.com/eliashovdenes/Pokemon-Type-Trainer)")
