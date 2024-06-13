@@ -967,7 +967,7 @@ with tab1:
                             st.rerun()
             else:
                 if st.session_state.get('generation_correct') and st.session_state.get('typing_correct'):
-                    if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True and not st.session_state['non_random_mode']:
+                    if st.session_state.get("show_answer_pressed") == False and len(listOfActiveGensNum) == 9 and st.session_state['correct_guess_made'] == True and not st.session_state['non_random_mode'] and not st.session_state['daily_challenge_active']:
                         st.session_state['current_streak'] += 1
                         st.toast("Streak increased! :tada: Current streak: " + str(st.session_state['current_streak']))
                         if st.session_state['current_streak'] > st.session_state['highest_streak']:
