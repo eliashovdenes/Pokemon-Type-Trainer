@@ -1,6 +1,6 @@
 # Poke Typer
 
-#### Check out the site here: https://pokemonprep.onrender.com
+#### Check out the site here: [poketyper.com](https://poketyper.com)
 
 **_Disclaimer: Loading the site may take a minute or two._**
 
