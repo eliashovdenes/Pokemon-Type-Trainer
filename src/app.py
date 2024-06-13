@@ -199,6 +199,9 @@ def load_pokemon_names():
     c.execute('SELECT name FROM pokemon')
     names = [name[0] for name in c.fetchall()]
     conn.close()
+
+    # Shuffle the names
+    random.shuffle(names)
     names.insert(0, "Write here/Choose One:")
     return names
 
