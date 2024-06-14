@@ -4,6 +4,7 @@ from discord.ext import tasks
 import psycopg2
 from dotenv import load_dotenv
 import pandas as pd
+from datetime import datetime
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ client = discord.Client(intents=intents)
 
 async def delete_previous_messages(channel):
     async for message in channel.history(limit=100):
-        if message.author == client.user:
+        if message.author == client.user and message.created_at.date() == datetime.utcnow().date():
             await message.delete()
 
 @tasks.loop(hours=24)
