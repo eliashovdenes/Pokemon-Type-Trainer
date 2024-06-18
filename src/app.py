@@ -799,7 +799,7 @@ with tab1:
                     with three:
                         name_guess = st.selectbox("Guess the name of the Pokémon:",listOfPokemonNames, key='daily_name_guess')
 
-                    if st.button(f"Submit guess"):
+                    if st.button(f"Submit guess for Pokemon {st.session_state['daily_challenge']['current_index'] + 1}"):
                         all_correct = all([
                             selected_generation == generation,
                             (selected_typing == primary_type and selected_typing2 == secondary_type) or (selected_typing == secondary_type and selected_typing2 == primary_type),
