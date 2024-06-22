@@ -59,6 +59,8 @@ def main():
     """)
     pg_conn.commit()
 
+
+
     # Copy data from SQLite to PostgreSQL
     copy_table_data(sqlite_cursor, pg_conn, 'users')
     copy_table_data(sqlite_cursor, pg_conn, 'user_scores')
