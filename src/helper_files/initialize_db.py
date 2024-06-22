@@ -1,7 +1,10 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
 
-# Set the DATABASE_URL directly
-DATABASE_URL = "secret"
+load_dotenv()
+
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 # SQL commands to create tables
 create_users_table = """
