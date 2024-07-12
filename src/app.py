@@ -8,8 +8,9 @@ import psycopg2
 from psycopg2 import pool
 from dotenv import load_dotenv
 from streamlit_cookies_manager import EncryptedCookieManager
-from datetime import datetime
+from datetime import datetime ,timedelta
 import subprocess
+import calendar
 
 # Set the page title and page icon
 st.set_page_config(page_title="Pokemon type trainer!", page_icon="../pictures/logo2.png", layout="wide")
@@ -461,7 +462,7 @@ with leaderboard:
         st.write("To view and participate in the leaderboard, please log in to your account. Go to the account page to log in or sign up.")
 
     if st.session_state['logged_in']:
-        left, right, bin = st.columns([2,2,5])
+        left, right, bin = st.columns([2,2,2])
         with left:
             @st.cache_data(ttl=60)  # Cache for 60 seconds
             def fetch_leaderboard():
@@ -562,6 +563,57 @@ with leaderboard:
                 },
                 hide_index=True,
             )
+
+
+            @st.cache_data(ttl=60)  # Cache for 60 seconds
+            def fetch_monthly_leaderboard():
+                conn = get_db_connection()
+                try:
+                    c = conn.cursor()
+                    # Get the first and last date of the current month
+                    today = datetime.today()
+                    first_day_of_month = today.replace(day=1).date()
+                    last_day_of_month = datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1]).date()
+                    
+                    c.execute('''
+                        SELECT u.username, SUM(ds.daily_score) AS total_score
+                        FROM user_daily_scores ds
+                        JOIN users u ON ds.user_id = u.user_id
+                        WHERE ds.score_date BETWEEN %s AND %s
+                        GROUP BY u.username
+                        ORDER BY total_score DESC
+                        LIMIT 30
+                    ''', (first_day_of_month, last_day_of_month))
+                    
+                    leaderboard = c.fetchall()
+                    leaderboard_df = pd.DataFrame(leaderboard, columns=["Username", "Total Score"])
+                    leaderboard_df["Rank"] = leaderboard_df.index + 1
+                    leaderboard_df = leaderboard_df[["Rank", "Username", "Total Score"]]
+                    return leaderboard_df
+                finally:
+                    release_db_connection(conn)
+        with bin:
+            # Display monthly leaderboard
+            st.subheader("This Month's Daily Total Scores", anchor=False)
+            monthly_leaderboard_df = fetch_monthly_leaderboard()
+
+            monthly_leaderboard_df["Total Score"] = monthly_leaderboard_df.apply(
+                lambda row: f"{row['Total Score']} 🥇" if row['Rank'] == 1 else f"{row['Total Score']} 😎", axis=1
+            )
+
+            st.dataframe(
+                monthly_leaderboard_df,
+                column_config={
+                    "Rank": "Rank",
+                    "Username": "Username",
+                    "Total Score": st.column_config.TextColumn("Total Score"),
+                },
+                hide_index=True,
+            )
+
+
+
+            
 
 with tab3:
     left, right, third = st.columns([1, 1, 1])
